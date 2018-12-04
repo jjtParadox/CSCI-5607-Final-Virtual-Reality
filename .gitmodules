@@ -1,0 +1,3 @@
+[submodule "CSCI5607"]
+	path = CSCI5607
+	url = ../CSCI5607.git
