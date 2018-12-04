@@ -1,3 +1,6 @@
 [submodule "CSCI5607"]
 	path = CSCI5607
-	url = ../CSCI5607.git
+	url = https://github.umn.edu/kruge203/CSCI5607.git
+[submodule "openvr"]
+	path = openvr
+	url = https://github.com/ValveSoftware/openvr.git
