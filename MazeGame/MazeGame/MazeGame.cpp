@@ -305,25 +305,6 @@ void RenderCompanionWindow() {
 }
 
 int main(int argc, char* argv[]) {
-    printf("HMD Present? %i\n", vr::VR_IsHmdPresent());
-    printf("Runtime installed? %i\n", vr::VR_IsRuntimeInstalled());
-    if (vr::VR_IsHmdPresent() && vr::VR_IsRuntimeInstalled()) {
-        printf("We're ready to go!\n");
-    } else {
-        exit(-1);
-    }
-    vr::EVRInitError perror;
-    m_pHMD = VR_Init(&perror, vr::VRApplication_Scene);
-    if (m_pHMD == NULL) {
-        printf("Failed to init VR system.");
-        exit(-1);
-    }
-
-    if (!vr::VRCompositor()) {
-        printf("Compositor initialization failed.\n");
-        exit(-1);
-    }
-
     // Parse command-line arguments
     bool window_size_specified = false;
     std::string map_file = "map2.txt";
@@ -358,8 +339,10 @@ int main(int argc, char* argv[]) {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
 
     // Create a window (offsetx, offsety, width, height, flags)
-    SDL_Window* window =
-        SDL_CreateWindow("My OpenGL Program", 100, 100, m_nCompanionWindowWidth, m_nCompanionWindowHeight, SDL_WINDOW_OPENGL);
+    SDL_Window* window = SDL_CreateWindow("My OpenGL Program", 100, 100, m_nCompanionWindowWidth, m_nCompanionWindowHeight,
+                                          SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 0);
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 0);
 
     // Maximize the window if no size was specified
     // if (!window_size_specified) {
@@ -371,6 +354,8 @@ int main(int argc, char* argv[]) {
 
     // Create a context to draw in
     SDL_GLContext context = SDL_GL_CreateContext(window);
+
+    SDL_GL_SetSwapInterval(0);
 
     SDL_SetRelativeMouseMode(SDL_TRUE);  // 'grab' the mouse
 
@@ -415,6 +400,25 @@ int main(int argc, char* argv[]) {
     SetupCameras();
     SetupStereoRenderTargets();
     SetupCompanionWindow();
+
+    printf("HMD Present? %i\n", vr::VR_IsHmdPresent());
+    printf("Runtime installed? %i\n", vr::VR_IsRuntimeInstalled());
+    if (vr::VR_IsHmdPresent() && vr::VR_IsRuntimeInstalled()) {
+        printf("We're ready to go!\n");
+    } else {
+        exit(-1);
+    }
+    vr::EVRInitError perror;
+    m_pHMD = VR_Init(&perror, vr::VRApplication_Scene);
+    if (m_pHMD == NULL) {
+        printf("Failed to init VR system.");
+        exit(-1);
+    }
+
+    if (!vr::VRCompositor()) {
+        printf("Compositor initialization failed.\n");
+        exit(-1);
+    }
 
     // Event Loop (Loop forever processing each event as fast as possible)
     SDL_Event windowEvent;
@@ -494,7 +498,8 @@ int main(int argc, char* argv[]) {
 
         // SDL_GL_SwapWindow(window);  // Double buffering
 
-        vr::VRCompositor()->WaitGetPoses(m_rTrackedDevicePose, vr::k_unMaxTrackedDeviceCount, NULL, 0);
+        // vr::VRCompositor()->WaitGetPoses(m_rTrackedDevicePose, vr::k_unMaxTrackedDeviceCount, NULL, 0);
+        UpdateHMDMatrixPose();
 
         // Clear the screen to default color
         /*glClearColor(.2f, 0.4f, 0.8f, 1.0f);
@@ -510,6 +515,8 @@ int main(int argc, char* argv[]) {
 
         // Render scene
         glUseProgram(ShaderManager::Textured_Shader);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_DEPTH_TEST);
         timePassed = SDL_GetTicks() / 1000.f;
         player.Update();
         camera.Update();
@@ -519,6 +526,7 @@ int main(int argc, char* argv[]) {
         TextureManager::Update();
         glBindVertexArray(vao);
         map->UpdateAll();
+        glUseProgram(0);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -540,6 +548,8 @@ int main(int argc, char* argv[]) {
 
         // Render scene
         glUseProgram(ShaderManager::Textured_Shader);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_DEPTH_TEST);
         player.Update();
         camera.Update();
         glUniformMatrix4fv(ShaderManager::Attributes.projection, 1, GL_FALSE,
@@ -548,6 +558,7 @@ int main(int argc, char* argv[]) {
         TextureManager::Update();
         glBindVertexArray(vao);
         map->UpdateAll();
+        glUseProgram(0);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -561,19 +572,18 @@ int main(int argc, char* argv[]) {
         glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
+        RenderCompanionWindow();
+
         // Submit to OpenVR
         vr::Texture_t leftEyeTexture = {(void*)(uintptr_t)leftEyeDesc.m_nResolveTextureId, vr::TextureType_OpenGL, vr::ColorSpace_Gamma};
         vr::VRCompositor()->Submit(vr::Eye_Left, &leftEyeTexture);
         vr::Texture_t rightEyeTexture = {(void*)(uintptr_t)rightEyeDesc.m_nResolveTextureId, vr::TextureType_OpenGL, vr::ColorSpace_Gamma};
         vr::VRCompositor()->Submit(vr::Eye_Right, &rightEyeTexture);
 
-        RenderCompanionWindow();
-
-        glFinish();
-
         SDL_GL_SwapWindow(window);  // Double buffering
 
-        UpdateHMDMatrixPose();
+        glClearColor(0, 0, 0, 1);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
     // Clean Up
