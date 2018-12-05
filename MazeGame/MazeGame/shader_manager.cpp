@@ -1,5 +1,7 @@
 #include "constants.h"
 #include "shader_manager.h"
+#include <sstream>
+#include <fstream>
 
 int ShaderManager::InitShader(const std::string& vertex_shader_file, const std::string& fragment_shader_file) {
     Textured_Shader = CompileShaderProgram(vertex_shader_file, fragment_shader_file);
@@ -109,38 +111,11 @@ GLuint ShaderManager::CompileShaderProgram(const std::string& vertex_shader_file
 
 // Create a NULL-terminated string by reading the provided file
 char* ShaderManager::ReadShaderSource(const char* shaderFile) {
-    FILE* fp;
-    long length;
-    char* buffer;
+    std::ifstream t(shaderFile);
+    std::stringstream buffer;
+    buffer << t.rdbuf();
 
-    // open the file containing the text of the shader code
-    fopen_s(&fp, shaderFile, "r");
-
-    // check for errors in opening the file
-    if (fp == NULL) {
-        printf("Can't open shader source file %s\n", shaderFile);
-        return NULL;
-    }
-
-    // determine the file size
-    fseek(fp, 0, SEEK_END);  // move position indicator to the end of the file;
-    length = ftell(fp);      // return the value of the current position
-
-    // allocate a buffer with the indicated number of bytes, plus one
-    buffer = new char[length + 1];
-
-    // read the appropriate number of bytes from the file
-    fseek(fp, 0, SEEK_SET);        // move position indicator to the start of the file
-    fread(buffer, 1, length, fp);  // read all of the bytes
-
-    // append a NULL character to indicate the end of the string
-    buffer[length] = '\0';
-
-    // close the file
-    fclose(fp);
-
-    // return the string
-    return buffer;
+    return _strdup(buffer.str().c_str());
 }
 
 void ShaderManager::VerifyShaderCompiled(GLuint shader) {
