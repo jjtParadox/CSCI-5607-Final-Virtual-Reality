@@ -93,8 +93,7 @@ void Camera::Update() {
         Translate(0, -CAMERA_MOVE_SPEED, 0);
     }*/
 
-    // glm::mat4 view = glm::lookAt(transform->WorldPosition(), look_at_->WorldPosition(), up_->WorldPosition() -
-    // transform->WorldPosition());
+    glm::mat4 view = glm::lookAt(transform->WorldPosition(), look_at_->WorldPosition(), up_->WorldPosition() - transform->WorldPosition());
     // printf("CameraPos: %f, %f, %f\n", position_.x, position_.y, position_.z);
-    // glUniformMatrix4fv(ShaderManager::Attributes.view, 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(ShaderManager::Attributes.view, 1, GL_FALSE, glm::value_ptr(view));
 }

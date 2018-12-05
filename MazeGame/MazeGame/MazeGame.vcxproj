@@ -165,6 +165,7 @@
     <ClCompile Include="game_object.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="goal.cpp" />
+    <ClCompile Include="hellovr_opengl_main.cpp" />
     <ClCompile Include="key.cpp" />
     <ClCompile Include="map_loader.cpp" />
     <ClCompile Include="material.cpp" />
@@ -173,6 +174,9 @@
     <ClCompile Include="model_manager.cpp" />
     <ClCompile Include="player.cpp" />
     <ClCompile Include="shader_manager.cpp" />
+    <ClCompile Include="shared\lodepng.cpp" />
+    <ClCompile Include="shared\Matrices.cpp" />
+    <ClCompile Include="shared\strtools.cpp" />
     <ClCompile Include="texture_manager.cpp" />
     <ClCompile Include="transformable.cpp" />
     <ClCompile Include="Triangle.cpp" />
@@ -197,6 +201,11 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="player.h" />
     <ClInclude Include="shader_manager.h" />
+    <ClInclude Include="shared\compat.h" />
+    <ClInclude Include="shared\lodepng.h" />
+    <ClInclude Include="shared\Matrices.h" />
+    <ClInclude Include="shared\strtools.h" />
+    <ClInclude Include="shared\Vectors.h" />
     <ClInclude Include="spawn.h" />
     <ClInclude Include="texture_manager.h" />
     <ClInclude Include="transformable.h" />
