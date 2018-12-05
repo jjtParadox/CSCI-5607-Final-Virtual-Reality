@@ -30,3 +30,21 @@
 *.exe
 *.out
 *.app
+
+# Cmake things
+CMakeCache.txt
+*/CMakeFiles/*
+**/Release/*
+**/Debug/*
+*.cmake
+
+# Visual Studio
+*.tlog
+*/.vs/**
+*.pdb
+*.log
+*.ilk
+*.idb
+*.ipdb
+*.iobj
+openvr/samples/******
