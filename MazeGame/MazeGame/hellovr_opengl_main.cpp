@@ -587,7 +587,7 @@ void CMainApplication::SetupScene() {
 
     ModelManager::InitVBO();
 
-    ShaderManager::InitShader("textured-Vertex.glsl", "textured-Fragment.glsl");
+    ShaderManager::InitShaders();
     m_nSceneMatrixLocation = ShaderManager::Attributes.projection;
 
     TextureManager::InitTextures();

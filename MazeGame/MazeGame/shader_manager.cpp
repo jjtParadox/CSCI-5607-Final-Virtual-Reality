@@ -1,11 +1,10 @@
+#include <fstream>
+#include <sstream>
 #include "constants.h"
 #include "shader_manager.h"
-#include <sstream>
-#include <fstream>
 
-int ShaderManager::InitShader(const std::string& vertex_shader_file, const std::string& fragment_shader_file) {
-    Textured_Shader = CompileShaderProgram(vertex_shader_file, fragment_shader_file);
-
+int ShaderManager::InitShaders() {
+    Textured_Shader = CompileShaderProgram("textured-Vertex.glsl", "textured-Fragment.glsl");
     CompanionWindow_Shader = CompileShaderProgram("companionWindow-Vertex.glsl", "companionWindow-Fragment.glsl");
 
     InitShaderAttributes();

@@ -15,7 +15,7 @@ typedef struct {
 
 class ShaderManager {
    public:
-    static int InitShader(const std::string& vertex_shader_file, const std::string& fragment_shader_file);
+    static int InitShaders();
     static void Cleanup();
 
     static GLuint Textured_Shader;
