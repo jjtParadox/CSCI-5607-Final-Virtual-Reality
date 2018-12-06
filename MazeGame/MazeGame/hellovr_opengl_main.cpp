@@ -101,9 +101,6 @@ class CMainApplication {
 
     Matrix4 ConvertSteamVRMatrixToMatrix4(const vr::HmdMatrix34_t &matPose);
 
-    GLuint CompileGLShader(const char *pchShaderName, const char *pchVertexShader, const char *pchFragmentShader);
-    bool CreateAllShaders();
-
    private:
     MapLoader map_loader;
     Map *map;
@@ -201,11 +198,6 @@ class CMainApplication {
         VertexDataWindow(const Vector2 &pos, const Vector2 tex) : position(pos), texCoord(tex) {}
     };
 
-    GLuint m_unSceneProgramID;
-    GLuint m_unCompanionWindowProgramID;
-    GLuint m_unControllerTransformProgramID;
-    GLuint m_unRenderModelProgramID;
-
     GLint m_nSceneMatrixLocation;
     GLint m_nControllerMatrixLocation;
     GLint m_nRenderModelMatrixLocation;
@@ -291,23 +283,6 @@ bool GetDigitalActionState(vr::VRActionHandle_t action, vr::VRInputValueHandle_t
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Outputs a set of optional arguments to debugging output, using
-//          the printf format setting specified in fmt*.
-//-----------------------------------------------------------------------------
-void dprintf(const char *fmt, ...) {
-    va_list args;
-    char buffer[2048];
-
-    va_start(args, fmt);
-    vsprintf_s(buffer, fmt, args);
-    va_end(args);
-
-    if (g_bPrintf) printf("%s", buffer);
-
-    OutputDebugStringA(buffer);
-}
-
-//-----------------------------------------------------------------------------
 // Purpose: Constructor
 //-----------------------------------------------------------------------------
 CMainApplication::CMainApplication(int argc, char *argv[])
@@ -315,10 +290,6 @@ CMainApplication::CMainApplication(int argc, char *argv[])
       m_pContext(NULL),
       m_nCompanionWindowWidth(1280),
       m_nCompanionWindowHeight(640),
-      m_unSceneProgramID(0),
-      m_unCompanionWindowProgramID(0),
-      m_unControllerTransformProgramID(0),
-      m_unRenderModelProgramID(0),
       m_pHMD(NULL),
       m_bDebugOpenGL(false),
       m_bVerbose(false),
@@ -338,22 +309,6 @@ CMainApplication::CMainApplication(int argc, char *argv[])
       m_iSceneVolumeInit(20),
       m_strPoseClasses(""),
       m_bShowCubes(true) {
-    for (int i = 1; i < argc; i++) {
-        if (!stricmp(argv[i], "-gldebug")) {
-            m_bDebugOpenGL = true;
-        } else if (!stricmp(argv[i], "-verbose")) {
-            m_bVerbose = true;
-        } else if (!stricmp(argv[i], "-novblank")) {
-            m_bVblank = false;
-        } else if (!stricmp(argv[i], "-noglfinishhack")) {
-            m_bGlFinishHack = false;
-        } else if (!stricmp(argv[i], "-noprintf")) {
-            g_bPrintf = false;
-        } else if (!stricmp(argv[i], "-cubevolume") && (argc > i + 1) && (*argv[i + 1] != '-')) {
-            m_iSceneVolumeInit = atoi(argv[i + 1]);
-            i++;
-        }
-    }
     // other initialization tasks are done in BInit
     memset(m_rDevClassChar, 0, sizeof(m_rDevClassChar));
 };
@@ -361,10 +316,7 @@ CMainApplication::CMainApplication(int argc, char *argv[])
 //-----------------------------------------------------------------------------
 // Purpose: Destructor
 //-----------------------------------------------------------------------------
-CMainApplication::~CMainApplication() {
-    // work is done in Shutdown
-    dprintf("Shutdown");
-}
+CMainApplication::~CMainApplication() {}
 
 //-----------------------------------------------------------------------------
 // Purpose: Helper to get a string from a tracked device property and turn it
@@ -403,7 +355,7 @@ bool CMainApplication::BInit() {
         return false;
     }
 
-    int nWindowPosX = 700;
+    int nWindowPosX = 100;
     int nWindowPosY = 100;
     Uint32 unWindowFlags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN;
 
@@ -486,25 +438,12 @@ bool CMainApplication::BInit() {
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Outputs the string in message to debugging output.
-//          All other parameters are ignored.
-//          Does not return any meaningful value or reference.
-//-----------------------------------------------------------------------------
-void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const char *message,
-                            const void *userParam) {
-    dprintf("GL Error: %s\n", message);
-}
-
-//-----------------------------------------------------------------------------
 // Purpose: Initialize OpenGL. Returns true if OpenGL has been successfully
 //          initialized, false if shaders could not be created.
 //          If failure occurred in a module other than shaders, the function
 //          may return true or throw an error.
 //-----------------------------------------------------------------------------
 bool CMainApplication::BInitGL() {
-    if (!CreateAllShaders()) return false;
-
-    // SetupTexturemaps();
     SetupScene();
     SetupCameras();
     SetupStereoRenderTargets();
@@ -595,10 +534,10 @@ void CMainApplication::RunMainLoop() {
 void CMainApplication::ProcessVREvent(const vr::VREvent_t &event) {
     switch (event.eventType) {
         case vr::VREvent_TrackedDeviceDeactivated: {
-            dprintf("Device %u detached.\n", event.trackedDeviceIndex);
+            printf("Device %u detached.\n", event.trackedDeviceIndex);
         } break;
         case vr::VREvent_TrackedDeviceUpdated: {
-            dprintf("Device %u updated.\n", event.trackedDeviceIndex);
+            printf("Device %u updated.\n", event.trackedDeviceIndex);
         } break;
     }
 }
@@ -630,181 +569,6 @@ void CMainApplication::RenderFrame() {
     }
 
     UpdateHMDMatrixPose();
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Compiles a GL shader program and returns the handle. Returns 0 if
-//			the shader couldn't be compiled for some reason.
-//-----------------------------------------------------------------------------
-GLuint CMainApplication::CompileGLShader(const char *pchShaderName, const char *pchVertexShader, const char *pchFragmentShader) {
-    GLuint unProgramID = glCreateProgram();
-
-    GLuint nSceneVertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(nSceneVertexShader, 1, &pchVertexShader, NULL);
-    glCompileShader(nSceneVertexShader);
-
-    GLint vShaderCompiled = GL_FALSE;
-    glGetShaderiv(nSceneVertexShader, GL_COMPILE_STATUS, &vShaderCompiled);
-    if (vShaderCompiled != GL_TRUE) {
-        dprintf("%s - Unable to compile vertex shader %d!\n", pchShaderName, nSceneVertexShader);
-        glDeleteProgram(unProgramID);
-        glDeleteShader(nSceneVertexShader);
-        return 0;
-    }
-    glAttachShader(unProgramID, nSceneVertexShader);
-    glDeleteShader(nSceneVertexShader);  // the program hangs onto this once it's attached
-
-    GLuint nSceneFragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(nSceneFragmentShader, 1, &pchFragmentShader, NULL);
-    glCompileShader(nSceneFragmentShader);
-
-    GLint fShaderCompiled = GL_FALSE;
-    glGetShaderiv(nSceneFragmentShader, GL_COMPILE_STATUS, &fShaderCompiled);
-    if (fShaderCompiled != GL_TRUE) {
-        dprintf("%s - Unable to compile fragment shader %d!\n", pchShaderName, nSceneFragmentShader);
-        glDeleteProgram(unProgramID);
-        glDeleteShader(nSceneFragmentShader);
-        return 0;
-    }
-
-    glAttachShader(unProgramID, nSceneFragmentShader);
-    glDeleteShader(nSceneFragmentShader);  // the program hangs onto this once it's attached
-
-    glLinkProgram(unProgramID);
-
-    GLint programSuccess = GL_TRUE;
-    glGetProgramiv(unProgramID, GL_LINK_STATUS, &programSuccess);
-    if (programSuccess != GL_TRUE) {
-        dprintf("%s - Error linking program %d!\n", pchShaderName, unProgramID);
-        glDeleteProgram(unProgramID);
-        return 0;
-    }
-
-    glUseProgram(unProgramID);
-    glUseProgram(0);
-
-    return unProgramID;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Creates all the shaders used by HelloVR SDL
-//-----------------------------------------------------------------------------
-bool CMainApplication::CreateAllShaders() {
-    m_unSceneProgramID = CompileGLShader("Scene",
-
-                                         // Vertex Shader
-                                         "#version 410\n"
-                                         "uniform mat4 matrix;\n"
-                                         "layout(location = 0) in vec4 position;\n"
-                                         "layout(location = 1) in vec2 v2UVcoordsIn;\n"
-                                         "layout(location = 2) in vec3 v3NormalIn;\n"
-                                         "out vec2 v2UVcoords;\n"
-                                         "void main()\n"
-                                         "{\n"
-                                         "	v2UVcoords = v2UVcoordsIn;\n"
-                                         "	gl_Position = matrix * position;\n"
-                                         "}\n",
-
-                                         // Fragment Shader
-                                         "#version 410 core\n"
-                                         "uniform sampler2D mytexture;\n"
-                                         "in vec2 v2UVcoords;\n"
-                                         "out vec4 outputColor;\n"
-                                         "void main()\n"
-                                         "{\n"
-                                         "   outputColor = texture(mytexture, v2UVcoords);\n"
-                                         "}\n");
-    // m_nSceneMatrixLocation = glGetUniformLocation(m_unSceneProgramID, "matrix");
-    /*if (m_nSceneMatrixLocation == -1) {
-        dprintf("Unable to find matrix uniform in scene shader\n");
-        return false;
-    }*/
-
-    m_unControllerTransformProgramID = CompileGLShader("Controller",
-
-                                                       // vertex shader
-                                                       "#version 410\n"
-                                                       "uniform mat4 matrix;\n"
-                                                       "layout(location = 0) in vec4 position;\n"
-                                                       "layout(location = 1) in vec3 v3ColorIn;\n"
-                                                       "out vec4 v4Color;\n"
-                                                       "void main()\n"
-                                                       "{\n"
-                                                       "	v4Color.xyz = v3ColorIn; v4Color.a = 1.0;\n"
-                                                       "	gl_Position = matrix * position;\n"
-                                                       "}\n",
-
-                                                       // fragment shader
-                                                       "#version 410\n"
-                                                       "in vec4 v4Color;\n"
-                                                       "out vec4 outputColor;\n"
-                                                       "void main()\n"
-                                                       "{\n"
-                                                       "   outputColor = v4Color;\n"
-                                                       "}\n");
-    m_nControllerMatrixLocation = glGetUniformLocation(m_unControllerTransformProgramID, "matrix");
-    if (m_nControllerMatrixLocation == -1) {
-        dprintf("Unable to find matrix uniform in controller shader\n");
-        return false;
-    }
-
-    m_unRenderModelProgramID = CompileGLShader("render model",
-
-                                               // vertex shader
-                                               "#version 410\n"
-                                               "uniform mat4 matrix;\n"
-                                               "layout(location = 0) in vec4 position;\n"
-                                               "layout(location = 1) in vec3 v3NormalIn;\n"
-                                               "layout(location = 2) in vec2 v2TexCoordsIn;\n"
-                                               "out vec2 v2TexCoord;\n"
-                                               "void main()\n"
-                                               "{\n"
-                                               "	v2TexCoord = v2TexCoordsIn;\n"
-                                               "	gl_Position = matrix * vec4(position.xyz, 1);\n"
-                                               "}\n",
-
-                                               // fragment shader
-                                               "#version 410 core\n"
-                                               "uniform sampler2D diffuse;\n"
-                                               "in vec2 v2TexCoord;\n"
-                                               "out vec4 outputColor;\n"
-                                               "void main()\n"
-                                               "{\n"
-                                               "   outputColor = texture( diffuse, v2TexCoord);\n"
-                                               "}\n"
-
-    );
-    m_nRenderModelMatrixLocation = glGetUniformLocation(m_unRenderModelProgramID, "matrix");
-    if (m_nRenderModelMatrixLocation == -1) {
-        dprintf("Unable to find matrix uniform in render model shader\n");
-        return false;
-    }
-
-    m_unCompanionWindowProgramID = CompileGLShader("CompanionWindow",
-
-                                                   // vertex shader
-                                                   "#version 410 core\n"
-                                                   "layout(location = 0) in vec4 position;\n"
-                                                   "layout(location = 1) in vec2 v2UVIn;\n"
-                                                   "noperspective out vec2 v2UV;\n"
-                                                   "void main()\n"
-                                                   "{\n"
-                                                   "	v2UV = v2UVIn;\n"
-                                                   "	gl_Position = position;\n"
-                                                   "}\n",
-
-                                                   // fragment shader
-                                                   "#version 410 core\n"
-                                                   "uniform sampler2D mytexture;\n"
-                                                   "noperspective in vec2 v2UV;\n"
-                                                   "out vec4 outputColor;\n"
-                                                   "void main()\n"
-                                                   "{\n"
-                                                   "		outputColor = texture(mytexture, v2UV);\n"
-                                                   "}\n");
-
-    return m_unSceneProgramID != 0 && m_unControllerTransformProgramID != 0 && m_unRenderModelProgramID != 0 &&
-           m_unCompanionWindowProgramID != 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -1020,7 +784,7 @@ void CMainApplication::RenderCompanionWindow() {
     glActiveTexture(GL_TEXTURE0);  // Must reset this, as this is where the companion window shader expects these textures
 
     glBindVertexArray(m_unCompanionWindowVAO);
-    glUseProgram(m_unCompanionWindowProgramID);
+    glUseProgram(ShaderManager::CompanionWindow_Shader);
 
     // render left eye (first half of index array )
     glBindTexture(GL_TEXTURE_2D, leftEyeDesc.m_nResolveTextureId);
