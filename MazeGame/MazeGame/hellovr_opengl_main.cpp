@@ -84,8 +84,6 @@ class CMainApplication {
     void ProcessVREvent(const vr::VREvent_t &event);
     void RenderFrame();
 
-    bool SetupTexturemaps();
-
     void SetupScene();
 
     bool SetupStereoRenderTargets();
@@ -315,8 +313,8 @@ void dprintf(const char *fmt, ...) {
 CMainApplication::CMainApplication(int argc, char *argv[])
     : m_pCompanionWindow(NULL),
       m_pContext(NULL),
-      m_nCompanionWindowWidth(640),
-      m_nCompanionWindowHeight(320),
+      m_nCompanionWindowWidth(1280),
+      m_nCompanionWindowHeight(640),
       m_unSceneProgramID(0),
       m_unCompanionWindowProgramID(0),
       m_unControllerTransformProgramID(0),
@@ -506,7 +504,7 @@ void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severi
 bool CMainApplication::BInitGL() {
     if (!CreateAllShaders()) return false;
 
-    SetupTexturemaps();
+    // SetupTexturemaps();
     SetupScene();
     SetupCameras();
     SetupStereoRenderTargets();
@@ -551,12 +549,40 @@ void CMainApplication::Shutdown() {
 // Purpose:
 //-----------------------------------------------------------------------------
 void CMainApplication::RunMainLoop() {
-    bool bQuit = false;
+    bool quit = false;
 
     SDL_StartTextInput();
     SDL_ShowCursor(SDL_DISABLE);
 
-    while (!bQuit) {
+    SDL_Event windowEvent;
+    while (!quit) {
+        while (SDL_PollEvent(&windowEvent)) {  // inspect all events in the queue
+            if (windowEvent.type == SDL_QUIT) quit = true;
+            // List of keycodes: https://wiki.libsdl.org/SDL_Keycode - You can catch many special keys
+            // Scancode refers to a keyboard position, keycode refers to the letter (e.g., EU keyboards)
+            if (windowEvent.type == SDL_KEYUP) {  // Exit event loop
+                if (windowEvent.key.keysym.sym == SDLK_ESCAPE) {
+                    quit = true;
+                }
+            }
+
+            if (windowEvent.type == SDL_MOUSEMOTION && SDL_GetRelativeMouseMode() == SDL_TRUE) {
+                // printf("Mouse movement (xrel, yrel): (%i, %i)\n", windowEvent.motion.xrel, windowEvent.motion.yrel);
+                float factor = 0.002f;
+                camera.Rotate(0, -windowEvent.motion.xrel * factor);
+            }
+
+            switch (windowEvent.window.event) {
+                case SDL_WINDOWEVENT_FOCUS_LOST:
+                    SDL_Log("Window focus lost");
+                    SDL_SetRelativeMouseMode(SDL_FALSE);
+                    break;
+                case SDL_WINDOWEVENT_FOCUS_GAINED:
+                    SDL_Log("Window focus gained");
+                    SDL_SetRelativeMouseMode(SDL_TRUE);
+                    break;
+            }
+        }
         RenderFrame();
     }
 
@@ -782,39 +808,6 @@ bool CMainApplication::CreateAllShaders() {
 }
 
 //-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
-bool CMainApplication::SetupTexturemaps() {
-    std::string strFullPath = "D:/Documents/Creation/School/FinalProject_CSCI5607/openvr/samples/bin/cube_texture.png";
-
-    std::vector<unsigned char> imageRGBA;
-    unsigned nImageWidth, nImageHeight;
-    unsigned nError = lodepng::decode(imageRGBA, nImageWidth, nImageHeight, strFullPath.c_str());
-
-    if (nError != 0) return false;
-
-    glGenTextures(1, &m_iTexture);
-    glBindTexture(GL_TEXTURE_2D, m_iTexture);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, nImageWidth, nImageHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, &imageRGBA[0]);
-
-    glGenerateMipmap(GL_TEXTURE_2D);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-
-    GLfloat fLargest;
-    glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &fLargest);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, fLargest);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    return (m_iTexture != 0);
-}
-
-//-----------------------------------------------------------------------------
 // Purpose: create a sea of cubes
 //-----------------------------------------------------------------------------
 void CMainApplication::SetupScene() {
@@ -1008,9 +1001,9 @@ void CMainApplication::RenderScene(vr::Hmd_Eye nEye) {
 
     glUseProgram(ShaderManager::Textured_Shader);
     glUniformMatrix4fv(m_nSceneMatrixLocation, 1, GL_FALSE, GetCurrentViewProjectionMatrix(nEye).get());
+    TextureManager::Update();
     player->Update();
     camera.Update();
-    TextureManager::Update();
     glBindVertexArray(m_unSceneVAO);
     map->UpdateAll();
     glBindVertexArray(0);
@@ -1024,6 +1017,7 @@ void CMainApplication::RenderScene(vr::Hmd_Eye nEye) {
 void CMainApplication::RenderCompanionWindow() {
     glDisable(GL_DEPTH_TEST);
     glViewport(0, 0, m_nCompanionWindowWidth, m_nCompanionWindowHeight);
+    glActiveTexture(GL_TEXTURE0);  // Must reset this, as this is where the companion window shader expects these textures
 
     glBindVertexArray(m_unCompanionWindowVAO);
     glUseProgram(m_unCompanionWindowProgramID);
