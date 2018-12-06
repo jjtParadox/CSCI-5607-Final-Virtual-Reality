@@ -108,12 +108,6 @@ class CMainApplication {
     Camera camera;
     Player *player;
 
-    bool m_bDebugOpenGL;
-    bool m_bVerbose;
-    bool m_bPerf;
-    bool m_bVblank;
-    bool m_bGlFinishHack;
-
     vr::IVRSystem *m_pHMD;
     std::string m_strDriver;
     std::string m_strDisplay;
@@ -143,11 +137,7 @@ class CMainApplication {
     SDL_GLContext m_pContext;
 
    private:  // OpenGL bookkeeping
-    int m_iTrackedControllerCount;
-    int m_iTrackedControllerCount_Last;
     int m_iValidPoseCount;
-    int m_iValidPoseCount_Last;
-    bool m_bShowCubes;
     vec2 m_vAnalogValue;
 
     std::string m_strPoseClasses;                         // what classes we saw poses for this frame
@@ -168,16 +158,11 @@ class CMainApplication {
 
     unsigned int m_uiVertcount;
 
-    GLuint m_glSceneVertBuffer;
     GLuint m_unSceneVAO;
     GLuint m_unCompanionWindowVAO;
     GLuint m_glCompanionWindowIDVertBuffer;
     GLuint m_glCompanionWindowIDIndexBuffer;
     unsigned int m_uiCompanionWindowIndexSize;
-
-    GLuint m_glControllerVertBuffer;
-    GLuint m_unControllerVAO;
-    unsigned int m_uiControllerVertcount;
 
     mat4 m_mat4HMDPose;
     mat4 m_mat4eyePosLeft;
@@ -200,8 +185,6 @@ class CMainApplication {
     };
 
     GLint m_nSceneMatrixLocation;
-    GLint m_nControllerMatrixLocation;
-    GLint m_nRenderModelMatrixLocation;
 
     struct FramebufferDesc {
         GLuint m_nDepthBufferId;
@@ -217,13 +200,6 @@ class CMainApplication {
 
     uint32_t m_nRenderWidth;
     uint32_t m_nRenderHeight;
-
-    vr::VRActionHandle_t m_actionHideCubes = vr::k_ulInvalidActionHandle;
-    vr::VRActionHandle_t m_actionHideThisController = vr::k_ulInvalidActionHandle;
-    vr::VRActionHandle_t m_actionTriggerHaptic = vr::k_ulInvalidActionHandle;
-    vr::VRActionHandle_t m_actionAnalongInput = vr::k_ulInvalidActionHandle;
-
-    vr::VRActionSetHandle_t m_actionsetDemo = vr::k_ulInvalidActionSetHandle;
 };
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -292,24 +268,11 @@ CMainApplication::CMainApplication(int argc, char *argv[])
       m_nCompanionWindowWidth(1280),
       m_nCompanionWindowHeight(640),
       m_pHMD(NULL),
-      m_bDebugOpenGL(false),
-      m_bVerbose(false),
-      m_bPerf(false),
-      m_bVblank(false),
-      m_bGlFinishHack(true),
-      m_glControllerVertBuffer(0),
-      m_unControllerVAO(0),
       m_unSceneVAO(0),
       m_nSceneMatrixLocation(-1),
-      m_nControllerMatrixLocation(-1),
-      m_nRenderModelMatrixLocation(-1),
-      m_iTrackedControllerCount(0),
-      m_iTrackedControllerCount_Last(-1),
       m_iValidPoseCount(0),
-      m_iValidPoseCount_Last(-1),
       m_iSceneVolumeInit(20),
-      m_strPoseClasses(""),
-      m_bShowCubes(true) {
+      m_strPoseClasses("") {
     // other initialization tasks are done in BInit
     memset(m_rDevClassChar, 0, sizeof(m_rDevClassChar));
 };
@@ -367,7 +330,6 @@ bool CMainApplication::BInit() {
 
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 0);
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 0);
-    if (m_bDebugOpenGL) SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
 
     m_pCompanionWindow =
         SDL_CreateWindow("hellovr", nWindowPosX, nWindowPosY, m_nCompanionWindowWidth, m_nCompanionWindowHeight, unWindowFlags);
@@ -391,22 +353,8 @@ bool CMainApplication::BInit() {
         printf("ERROR: Failed to initialize OpenGL context.\n");
         return -1;
     }
-    glGetError();  // to clear the error caused deep in GLEW
 
-    /*if ( SDL_GL_SetSwapInterval( m_bVblank ? 1 : 0 ) < 0 )
-    {
-            printf( "%s - Warning: Unable to set VSync! SDL Error: %s\n", __FUNCTION__, SDL_GetError() );
-            return false;
-    }*/
-
-    m_strDriver = "No Driver";
-    m_strDisplay = "No Display";
-
-    m_strDriver = GetTrackedDeviceString(vr::k_unTrackedDeviceIndex_Hmd, vr::Prop_TrackingSystemName_String);
-    m_strDisplay = GetTrackedDeviceString(vr::k_unTrackedDeviceIndex_Hmd, vr::Prop_SerialNumber_String);
-
-    std::string strWindowTitle = "hellovr - " + m_strDriver + " " + m_strDisplay;
-    SDL_SetWindowTitle(m_pCompanionWindow, strWindowTitle.c_str());
+    SDL_SetWindowTitle(m_pCompanionWindow, "MazeGameVR");
 
     // cube array
     m_iSceneVolumeWidth = m_iSceneVolumeInit;
@@ -421,9 +369,6 @@ bool CMainApplication::BInit() {
 
     m_iTexture = 0;
     m_uiVertcount = 0;
-
-    // 		m_MillisecondsTimer.start(1, this);
-    // 		m_SecondsTimer.start(1000, this);
 
     if (!BInitGL()) {
         printf("%s - Unable to initialize OpenGL!\n", __FUNCTION__);
@@ -558,16 +503,7 @@ void CMainApplication::RenderFrame() {
         vr::VRCompositor()->Submit(vr::Eye_Right, &rightEyeTexture);
     }
 
-    // SwapWindow
-    { SDL_GL_SwapWindow(m_pCompanionWindow); }
-
-    // Clear
-    {
-        // We want to make sure the glFinish waits for the entire present to complete, not just the submission
-        // of the command. So, we do a clear here right here so the glFinish will wait fully for the swap.
-        // glClearColor( 0, 0, 0, 1 );
-        // glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-    }
+    SDL_GL_SwapWindow(m_pCompanionWindow);
 
     UpdateHMDMatrixPose();
 }
