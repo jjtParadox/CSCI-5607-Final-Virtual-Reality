@@ -365,7 +365,7 @@ bool CMainApplication::BInit() {
     m_fScaleSpacing = 4.0f;
 
     m_fNearClip = 0.1f;
-    m_fFarClip = 30.0f;
+    m_fFarClip = 500.0f;
 
     m_iTexture = 0;
     m_uiVertcount = 0;
@@ -777,10 +777,13 @@ mat4 CMainApplication::GetHMDMatrixPoseEye(vr::Hmd_Eye nEye) {
 mat4 CMainApplication::GetCurrentViewProjectionMatrix(vr::Hmd_Eye nEye) {
     mat4 matMVP;
     if (nEye == vr::Eye_Left) {
-        matMVP = m_mat4ProjectionLeft * m_mat4eyePosLeft * m_mat4HMDPose;
+        matMVP = m_mat4ProjectionLeft * m_mat4eyePosLeft;
     } else if (nEye == vr::Eye_Right) {
-        matMVP = m_mat4ProjectionRight * m_mat4eyePosRight * m_mat4HMDPose;
+        matMVP = m_mat4ProjectionRight * m_mat4eyePosRight;
     }
+
+    matMVP = matMVP * glm::rotate(glm::scale(m_mat4HMDPose, vec3(1)), -(float)(M_PI / 2.0f), vec3(1, 0, 0)) *
+             glm::translate(player->transform->WorldTransform(), vec3(-2.5, -3.0, 0));
 
     return matMVP;
 }
@@ -827,6 +830,7 @@ void CMainApplication::UpdateHMDMatrixPose() {
 
     if (m_rTrackedDevicePose[vr::k_unTrackedDeviceIndex_Hmd].bPoseIsValid) {
         m_mat4HMDPose = m_rmat4DevicePose[vr::k_unTrackedDeviceIndex_Hmd];
+        // printf("HMD Pose: %f, %f, %f\n", m_mat4HMDPose[3][0], m_mat4HMDPose[3][1], m_mat4HMDPose[3][2]);
         m_mat4HMDPose = glm::inverse(m_mat4HMDPose);
     }
 }
