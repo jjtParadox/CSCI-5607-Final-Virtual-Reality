@@ -10,11 +10,9 @@
 #include <OpenVR/openvr.h>
 #include <SDL.h>
 #include <SDL_opengl.h>
+#include <glm.hpp>
 
-#include "shared/Matrices.h"
-#include "shared/lodepng.h"
-#include "shared/pathtools.h"
-
+#include <gtc/type_ptr.hpp>
 #include "bounding_box.h"
 #include "camera.h"
 #include "map.h"
@@ -58,13 +56,16 @@ const char *USAGE =
 
 void ThreadSleep(unsigned long nMilliseconds) {
 #if defined(_WIN32)
-    ::Sleep(nMilliseconds);
+    Sleep(nMilliseconds);
 #elif defined(POSIX)
     usleep(nMilliseconds * 1000);
 #endif
 }
 
 static bool g_bPrintf = true;
+using glm::mat4;
+using glm::vec2;
+using glm::vec3;
 
 //-----------------------------------------------------------------------------
 // Purpose:
@@ -94,12 +95,12 @@ class CMainApplication {
     void RenderCompanionWindow();
     void RenderScene(vr::Hmd_Eye nEye);
 
-    Matrix4 GetHMDMatrixProjectionEye(vr::Hmd_Eye nEye);
-    Matrix4 GetHMDMatrixPoseEye(vr::Hmd_Eye nEye);
-    Matrix4 GetCurrentViewProjectionMatrix(vr::Hmd_Eye nEye);
+    mat4 GetHMDMatrixProjectionEye(vr::Hmd_Eye nEye);
+    mat4 GetHMDMatrixPoseEye(vr::Hmd_Eye nEye);
+    mat4 GetCurrentViewProjectionMatrix(vr::Hmd_Eye nEye);
     void UpdateHMDMatrixPose();
 
-    Matrix4 ConvertSteamVRMatrixToMatrix4(const vr::HmdMatrix34_t &matPose);
+    mat4 ConvertSteamVRMatrixToMat4(const vr::HmdMatrix34_t &matPose);
 
    private:
     MapLoader map_loader;
@@ -117,13 +118,13 @@ class CMainApplication {
     std::string m_strDriver;
     std::string m_strDisplay;
     vr::TrackedDevicePose_t m_rTrackedDevicePose[vr::k_unMaxTrackedDeviceCount];
-    Matrix4 m_rmat4DevicePose[vr::k_unMaxTrackedDeviceCount];
+    mat4 m_rmat4DevicePose[vr::k_unMaxTrackedDeviceCount];
 
     struct ControllerInfo_t {
         vr::VRInputValueHandle_t m_source = vr::k_ulInvalidInputValueHandle;
         vr::VRActionHandle_t m_actionPose = vr::k_ulInvalidActionHandle;
         vr::VRActionHandle_t m_actionHaptic = vr::k_ulInvalidActionHandle;
-        Matrix4 m_rmat4Pose;
+        mat4 m_rmat4Pose;
         std::string m_sRenderModelName;
         bool m_bShowController;
     };
@@ -147,7 +148,7 @@ class CMainApplication {
     int m_iValidPoseCount;
     int m_iValidPoseCount_Last;
     bool m_bShowCubes;
-    Vector2 m_vAnalogValue;
+    vec2 m_vAnalogValue;
 
     std::string m_strPoseClasses;                         // what classes we saw poses for this frame
     char m_rDevClassChar[vr::k_unMaxTrackedDeviceCount];  // for each device, a character representing its class
@@ -178,24 +179,24 @@ class CMainApplication {
     GLuint m_unControllerVAO;
     unsigned int m_uiControllerVertcount;
 
-    Matrix4 m_mat4HMDPose;
-    Matrix4 m_mat4eyePosLeft;
-    Matrix4 m_mat4eyePosRight;
+    mat4 m_mat4HMDPose;
+    mat4 m_mat4eyePosLeft;
+    mat4 m_mat4eyePosRight;
 
-    Matrix4 m_mat4ProjectionCenter;
-    Matrix4 m_mat4ProjectionLeft;
-    Matrix4 m_mat4ProjectionRight;
+    mat4 m_mat4ProjectionCenter;
+    mat4 m_mat4ProjectionLeft;
+    mat4 m_mat4ProjectionRight;
 
     struct VertexDataScene {
-        Vector3 position;
-        Vector2 texCoord;
+        vec3 position;
+        vec2 texCoord;
     };
 
     struct VertexDataWindow {
-        Vector2 position;
-        Vector2 texCoord;
+        vec2 position;
+        vec2 texCoord;
 
-        VertexDataWindow(const Vector2 &pos, const Vector2 tex) : position(pos), texCoord(tex) {}
+        VertexDataWindow(const vec2 &pos, const vec2 tex) : position(pos), texCoord(tex) {}
     };
 
     GLint m_nSceneMatrixLocation;
@@ -345,12 +346,12 @@ bool CMainApplication::BInit() {
 
     // Loading the SteamVR Runtime
     vr::EVRInitError eError = vr::VRInitError_None;
-    m_pHMD = vr::VR_Init(&eError, vr::VRApplication_Scene);
+    m_pHMD = VR_Init(&eError, vr::VRApplication_Scene);
 
     if (eError != vr::VRInitError_None) {
         m_pHMD = NULL;
         char buf[1024];
-        sprintf_s(buf, sizeof(buf), "Unable to init VR runtime: %s", vr::VR_GetVRInitErrorAsEnglishDescription(eError));
+        sprintf_s(buf, sizeof(buf), "Unable to init VR runtime: %s", VR_GetVRInitErrorAsEnglishDescription(eError));
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "VR_Init Failed", buf, NULL);
         return false;
     }
@@ -671,16 +672,16 @@ void CMainApplication::SetupCompanionWindow() {
     std::vector<VertexDataWindow> vVerts;
 
     // left eye verts
-    vVerts.push_back(VertexDataWindow(Vector2(-1, -1), Vector2(0, 1)));
-    vVerts.push_back(VertexDataWindow(Vector2(0, -1), Vector2(1, 1)));
-    vVerts.push_back(VertexDataWindow(Vector2(-1, 1), Vector2(0, 0)));
-    vVerts.push_back(VertexDataWindow(Vector2(0, 1), Vector2(1, 0)));
+    vVerts.push_back(VertexDataWindow(vec2(-1, -1), vec2(0, 1)));
+    vVerts.push_back(VertexDataWindow(vec2(0, -1), vec2(1, 1)));
+    vVerts.push_back(VertexDataWindow(vec2(-1, 1), vec2(0, 0)));
+    vVerts.push_back(VertexDataWindow(vec2(0, 1), vec2(1, 0)));
 
     // right eye verts
-    vVerts.push_back(VertexDataWindow(Vector2(0, -1), Vector2(0, 1)));
-    vVerts.push_back(VertexDataWindow(Vector2(1, -1), Vector2(1, 1)));
-    vVerts.push_back(VertexDataWindow(Vector2(0, 1), Vector2(0, 0)));
-    vVerts.push_back(VertexDataWindow(Vector2(1, 1), Vector2(1, 0)));
+    vVerts.push_back(VertexDataWindow(vec2(0, -1), vec2(0, 1)));
+    vVerts.push_back(VertexDataWindow(vec2(1, -1), vec2(1, 1)));
+    vVerts.push_back(VertexDataWindow(vec2(0, 1), vec2(0, 0)));
+    vVerts.push_back(VertexDataWindow(vec2(1, 1), vec2(1, 0)));
 
     GLushort vIndices[] = {0, 1, 3, 0, 3, 2, 4, 5, 7, 4, 7, 6};
     m_uiCompanionWindowIndexSize = _countof(vIndices);
@@ -764,7 +765,7 @@ void CMainApplication::RenderScene(vr::Hmd_Eye nEye) {
     glEnable(GL_DEPTH_TEST);
 
     glUseProgram(ShaderManager::Textured_Shader);
-    glUniformMatrix4fv(m_nSceneMatrixLocation, 1, GL_FALSE, GetCurrentViewProjectionMatrix(nEye).get());
+    glUniformMatrix4fv(m_nSceneMatrixLocation, 1, GL_FALSE, glm::value_ptr(GetCurrentViewProjectionMatrix(nEye)));
     TextureManager::Update();
     player->Update();
     camera.Update();
@@ -810,35 +811,35 @@ void CMainApplication::RenderCompanionWindow() {
 //-----------------------------------------------------------------------------
 // Purpose: Gets a Matrix Projection Eye with respect to nEye.
 //-----------------------------------------------------------------------------
-Matrix4 CMainApplication::GetHMDMatrixProjectionEye(vr::Hmd_Eye nEye) {
-    if (!m_pHMD) return Matrix4();
+mat4 CMainApplication::GetHMDMatrixProjectionEye(vr::Hmd_Eye nEye) {
+    if (!m_pHMD) return mat4();
 
     vr::HmdMatrix44_t mat = m_pHMD->GetProjectionMatrix(nEye, m_fNearClip, m_fFarClip);
 
-    return Matrix4(mat.m[0][0], mat.m[1][0], mat.m[2][0], mat.m[3][0], mat.m[0][1], mat.m[1][1], mat.m[2][1], mat.m[3][1], mat.m[0][2],
-                   mat.m[1][2], mat.m[2][2], mat.m[3][2], mat.m[0][3], mat.m[1][3], mat.m[2][3], mat.m[3][3]);
+    return mat4(mat.m[0][0], mat.m[1][0], mat.m[2][0], mat.m[3][0], mat.m[0][1], mat.m[1][1], mat.m[2][1], mat.m[3][1], mat.m[0][2],
+                mat.m[1][2], mat.m[2][2], mat.m[3][2], mat.m[0][3], mat.m[1][3], mat.m[2][3], mat.m[3][3]);
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: Gets an HMDMatrixPoseEye with respect to nEye.
 //-----------------------------------------------------------------------------
-Matrix4 CMainApplication::GetHMDMatrixPoseEye(vr::Hmd_Eye nEye) {
-    if (!m_pHMD) return Matrix4();
+mat4 CMainApplication::GetHMDMatrixPoseEye(vr::Hmd_Eye nEye) {
+    if (!m_pHMD) return mat4();
 
     vr::HmdMatrix34_t matEyeRight = m_pHMD->GetEyeToHeadTransform(nEye);
-    Matrix4 matrixObj(matEyeRight.m[0][0], matEyeRight.m[1][0], matEyeRight.m[2][0], 0.0, matEyeRight.m[0][1], matEyeRight.m[1][1],
-                      matEyeRight.m[2][1], 0.0, matEyeRight.m[0][2], matEyeRight.m[1][2], matEyeRight.m[2][2], 0.0, matEyeRight.m[0][3],
-                      matEyeRight.m[1][3], matEyeRight.m[2][3], 1.0f);
+    mat4 matrixObj(matEyeRight.m[0][0], matEyeRight.m[1][0], matEyeRight.m[2][0], 0.0, matEyeRight.m[0][1], matEyeRight.m[1][1],
+                   matEyeRight.m[2][1], 0.0, matEyeRight.m[0][2], matEyeRight.m[1][2], matEyeRight.m[2][2], 0.0, matEyeRight.m[0][3],
+                   matEyeRight.m[1][3], matEyeRight.m[2][3], 1.0f);
 
-    return matrixObj.invert();
+    return glm::inverse(matrixObj);
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: Gets a Current View Projection Matrix with respect to nEye,
 //          which may be an Eye_Left or an Eye_Right.
 //-----------------------------------------------------------------------------
-Matrix4 CMainApplication::GetCurrentViewProjectionMatrix(vr::Hmd_Eye nEye) {
-    Matrix4 matMVP;
+mat4 CMainApplication::GetCurrentViewProjectionMatrix(vr::Hmd_Eye nEye) {
+    mat4 matMVP;
     if (nEye == vr::Eye_Left) {
         matMVP = m_mat4ProjectionLeft * m_mat4eyePosLeft * m_mat4HMDPose;
     } else if (nEye == vr::Eye_Right) {
@@ -861,7 +862,7 @@ void CMainApplication::UpdateHMDMatrixPose() {
     for (int nDevice = 0; nDevice < vr::k_unMaxTrackedDeviceCount; ++nDevice) {
         if (m_rTrackedDevicePose[nDevice].bPoseIsValid) {
             m_iValidPoseCount++;
-            m_rmat4DevicePose[nDevice] = ConvertSteamVRMatrixToMatrix4(m_rTrackedDevicePose[nDevice].mDeviceToAbsoluteTracking);
+            m_rmat4DevicePose[nDevice] = ConvertSteamVRMatrixToMat4(m_rTrackedDevicePose[nDevice].mDeviceToAbsoluteTracking);
             if (m_rDevClassChar[nDevice] == 0) {
                 switch (m_pHMD->GetTrackedDeviceClass(nDevice)) {
                     case vr::TrackedDeviceClass_Controller:
@@ -890,16 +891,16 @@ void CMainApplication::UpdateHMDMatrixPose() {
 
     if (m_rTrackedDevicePose[vr::k_unTrackedDeviceIndex_Hmd].bPoseIsValid) {
         m_mat4HMDPose = m_rmat4DevicePose[vr::k_unTrackedDeviceIndex_Hmd];
-        m_mat4HMDPose.invert();
+        m_mat4HMDPose = glm::inverse(m_mat4HMDPose);
     }
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: Converts a SteamVR matrix to our local matrix class
 //-----------------------------------------------------------------------------
-Matrix4 CMainApplication::ConvertSteamVRMatrixToMatrix4(const vr::HmdMatrix34_t &matPose) {
-    Matrix4 matrixObj(matPose.m[0][0], matPose.m[1][0], matPose.m[2][0], 0.0, matPose.m[0][1], matPose.m[1][1], matPose.m[2][1], 0.0,
-                      matPose.m[0][2], matPose.m[1][2], matPose.m[2][2], 0.0, matPose.m[0][3], matPose.m[1][3], matPose.m[2][3], 1.0f);
+mat4 CMainApplication::ConvertSteamVRMatrixToMat4(const vr::HmdMatrix34_t &matPose) {
+    mat4 matrixObj(matPose.m[0][0], matPose.m[1][0], matPose.m[2][0], 0.0, matPose.m[0][1], matPose.m[1][1], matPose.m[2][1], 0.0,
+                   matPose.m[0][2], matPose.m[1][2], matPose.m[2][2], 0.0, matPose.m[0][3], matPose.m[1][3], matPose.m[2][3], 1.0f);
     return matrixObj;
 }
 
