@@ -380,6 +380,8 @@ bool CMainApplication::BInit() {
         return false;
     }
 
+    vr::VRCompositor()->SetTrackingSpace(vr::ETrackingUniverseOrigin::TrackingUniverseSeated);
+
     return true;
 }
 
@@ -782,8 +784,13 @@ mat4 CMainApplication::GetCurrentViewProjectionMatrix(vr::Hmd_Eye nEye) {
         matMVP = m_mat4ProjectionRight * m_mat4eyePosRight;
     }
 
-    matMVP = matMVP * glm::rotate(glm::scale(m_mat4HMDPose, vec3(1)), -(float)(M_PI / 2.0f), vec3(1, 0, 0)) *
-             glm::translate(player->transform->WorldTransform(), vec3(-2.5, -3.0, 0));
+    matMVP = matMVP * m_mat4HMDPose;
+    matMVP = glm::rotate(matMVP, -(float)(M_PI / 2.0f), vec3(1, 0, 0));  // Convert coordinate systems
+    matMVP = glm::scale(matMVP, vec3(1.5, 1.5, 2.0));                    // Make the world larger
+
+    mat4 worldPosToCameraPos = player->transform->WorldTransform();
+    worldPosToCameraPos = glm::inverse(worldPosToCameraPos);
+    matMVP = matMVP * worldPosToCameraPos;  // Kind of an addition for world to camera
 
     return matMVP;
 }
@@ -830,7 +837,7 @@ void CMainApplication::UpdateHMDMatrixPose() {
 
     if (m_rTrackedDevicePose[vr::k_unTrackedDeviceIndex_Hmd].bPoseIsValid) {
         m_mat4HMDPose = m_rmat4DevicePose[vr::k_unTrackedDeviceIndex_Hmd];
-        // printf("HMD Pose: %f, %f, %f\n", m_mat4HMDPose[3][0], m_mat4HMDPose[3][1], m_mat4HMDPose[3][2]);
+        printf("HMD Pose: %f, %f, %f\n", m_mat4HMDPose[3][0], m_mat4HMDPose[3][1], m_mat4HMDPose[3][2]);
         m_mat4HMDPose = glm::inverse(m_mat4HMDPose);
     }
 }
