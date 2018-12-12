@@ -75,7 +75,7 @@
     <ClCompile Include="goal.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="hellovr_opengl_main.cpp">
+    <ClCompile Include="vr_manager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -144,6 +144,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="map.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vr_manager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

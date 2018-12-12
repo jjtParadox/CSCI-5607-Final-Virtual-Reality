@@ -1,24 +1,22 @@
 //========= Copyright Valve Corporation ============//
+// Credit for the foundations of this code goes to Valve Corporation
+// https://github.com/ValveSoftware/openvr/blob/master/samples/hellovr_opengl/hellovr_opengl_main.cpp
 #define _CRT_SECURE_NO_DEPRECATE 1
 #define _CRT_NONSTDC_NO_DEPRECATE 1
+
+#include "vr_manager.h"
 
 #include <stdio.h>
 #include <cstdlib>
 #include <string>
 #include "glad.h"
 
-#include <OpenVR/openvr.h>
-#include <SDL.h>
 #include <SDL_opengl.h>
-#include <glm.hpp>
 
 #include <gtc/type_ptr.hpp>
 #include "bounding_box.h"
-#include "camera.h"
-#include "map.h"
 #include "map_loader.h"
 #include "model_manager.h"
-#include "player.h"
 #include "shader_manager.h"
 #include "texture_manager.h"
 const char *INSTRUCTIONS =
@@ -68,201 +66,9 @@ using glm::vec2;
 using glm::vec3;
 
 //-----------------------------------------------------------------------------
-// Purpose:
-//------------------------------------------------------------------------------
-class CMainApplication {
-   public:
-    CMainApplication(int argc, char *argv[]);
-    virtual ~CMainApplication();
-
-    bool BInit();
-    bool BInitGL();
-    bool BInitCompositor();
-
-    void Shutdown();
-
-    void RunMainLoop();
-    void ProcessVREvent(const vr::VREvent_t &event);
-    void RenderFrame();
-
-    void SetupScene();
-
-    bool SetupStereoRenderTargets();
-    void SetupCompanionWindow();
-    void SetupCameras();
-
-    void RenderStereoTargets();
-    void RenderCompanionWindow();
-    void RenderScene(vr::Hmd_Eye nEye);
-
-    mat4 GetHMDMatrixProjectionEye(vr::Hmd_Eye nEye);
-    mat4 GetHMDMatrixPoseEye(vr::Hmd_Eye nEye);
-    mat4 GetCurrentViewProjectionMatrix(vr::Hmd_Eye nEye);
-    void UpdateHMDMatrixPose();
-
-    mat4 ConvertSteamVRMatrixToMat4(const vr::HmdMatrix34_t &matPose);
-
-   private:
-    MapLoader map_loader;
-    Map *map;
-    Camera camera;
-    Player *player;
-
-    vr::IVRSystem *m_pHMD;
-    std::string m_strDriver;
-    std::string m_strDisplay;
-    vr::TrackedDevicePose_t m_rTrackedDevicePose[vr::k_unMaxTrackedDeviceCount];
-    mat4 m_rmat4DevicePose[vr::k_unMaxTrackedDeviceCount];
-
-    struct ControllerInfo_t {
-        vr::VRInputValueHandle_t m_source = vr::k_ulInvalidInputValueHandle;
-        vr::VRActionHandle_t m_actionPose = vr::k_ulInvalidActionHandle;
-        vr::VRActionHandle_t m_actionHaptic = vr::k_ulInvalidActionHandle;
-        mat4 m_rmat4Pose;
-        std::string m_sRenderModelName;
-        bool m_bShowController;
-    };
-
-    enum EHand {
-        Left = 0,
-        Right = 1,
-    };
-    ControllerInfo_t m_rHand[2];
-
-   private:  // SDL bookkeeping
-    SDL_Window *m_pCompanionWindow;
-    uint32_t m_nCompanionWindowWidth;
-    uint32_t m_nCompanionWindowHeight;
-
-    SDL_GLContext m_pContext;
-
-   private:  // OpenGL bookkeeping
-    int m_iValidPoseCount;
-    vec2 m_vAnalogValue;
-
-    std::string m_strPoseClasses;                         // what classes we saw poses for this frame
-    char m_rDevClassChar[vr::k_unMaxTrackedDeviceCount];  // for each device, a character representing its class
-
-    int m_iSceneVolumeWidth;
-    int m_iSceneVolumeHeight;
-    int m_iSceneVolumeDepth;
-    float m_fScaleSpacing;
-    float m_fScale;
-
-    int m_iSceneVolumeInit;  // if you want something other than the default 20x20x20
-
-    float m_fNearClip;
-    float m_fFarClip;
-
-    GLuint m_iTexture;
-
-    unsigned int m_uiVertcount;
-
-    GLuint m_unSceneVAO;
-    GLuint m_unCompanionWindowVAO;
-    GLuint m_glCompanionWindowIDVertBuffer;
-    GLuint m_glCompanionWindowIDIndexBuffer;
-    unsigned int m_uiCompanionWindowIndexSize;
-
-    mat4 m_mat4HMDPose;
-    mat4 m_mat4eyePosLeft;
-    mat4 m_mat4eyePosRight;
-
-    mat4 m_mat4ProjectionCenter;
-    mat4 m_mat4ProjectionLeft;
-    mat4 m_mat4ProjectionRight;
-
-    struct VertexDataScene {
-        vec3 position;
-        vec2 texCoord;
-    };
-
-    struct VertexDataWindow {
-        vec2 position;
-        vec2 texCoord;
-
-        VertexDataWindow(const vec2 &pos, const vec2 tex) : position(pos), texCoord(tex) {}
-    };
-
-    GLint m_nSceneMatrixLocation;
-
-    struct FramebufferDesc {
-        GLuint m_nDepthBufferId;
-        GLuint m_nRenderTextureId;
-        GLuint m_nRenderFramebufferId;
-        GLuint m_nResolveTextureId;
-        GLuint m_nResolveFramebufferId;
-    };
-    FramebufferDesc leftEyeDesc;
-    FramebufferDesc rightEyeDesc;
-
-    bool CreateFrameBuffer(int nWidth, int nHeight, FramebufferDesc &framebufferDesc);
-
-    uint32_t m_nRenderWidth;
-    uint32_t m_nRenderHeight;
-};
-
-//---------------------------------------------------------------------------------------------------------------------
-// Purpose: Returns true if the action is active and had a rising edge
-//---------------------------------------------------------------------------------------------------------------------
-bool GetDigitalActionRisingEdge(vr::VRActionHandle_t action, vr::VRInputValueHandle_t *pDevicePath = nullptr) {
-    vr::InputDigitalActionData_t actionData;
-    vr::VRInput()->GetDigitalActionData(action, &actionData, sizeof(actionData), vr::k_ulInvalidInputValueHandle);
-    if (pDevicePath) {
-        *pDevicePath = vr::k_ulInvalidInputValueHandle;
-        if (actionData.bActive) {
-            vr::InputOriginInfo_t originInfo;
-            if (vr::VRInputError_None ==
-                vr::VRInput()->GetOriginTrackedDeviceInfo(actionData.activeOrigin, &originInfo, sizeof(originInfo))) {
-                *pDevicePath = originInfo.devicePath;
-            }
-        }
-    }
-    return actionData.bActive && actionData.bChanged && actionData.bState;
-}
-
-//---------------------------------------------------------------------------------------------------------------------
-// Purpose: Returns true if the action is active and had a falling edge
-//---------------------------------------------------------------------------------------------------------------------
-bool GetDigitalActionFallingEdge(vr::VRActionHandle_t action, vr::VRInputValueHandle_t *pDevicePath = nullptr) {
-    vr::InputDigitalActionData_t actionData;
-    vr::VRInput()->GetDigitalActionData(action, &actionData, sizeof(actionData), vr::k_ulInvalidInputValueHandle);
-    if (pDevicePath) {
-        *pDevicePath = vr::k_ulInvalidInputValueHandle;
-        if (actionData.bActive) {
-            vr::InputOriginInfo_t originInfo;
-            if (vr::VRInputError_None ==
-                vr::VRInput()->GetOriginTrackedDeviceInfo(actionData.activeOrigin, &originInfo, sizeof(originInfo))) {
-                *pDevicePath = originInfo.devicePath;
-            }
-        }
-    }
-    return actionData.bActive && actionData.bChanged && !actionData.bState;
-}
-
-//---------------------------------------------------------------------------------------------------------------------
-// Purpose: Returns true if the action is active and its state is true
-//---------------------------------------------------------------------------------------------------------------------
-bool GetDigitalActionState(vr::VRActionHandle_t action, vr::VRInputValueHandle_t *pDevicePath = nullptr) {
-    vr::InputDigitalActionData_t actionData;
-    vr::VRInput()->GetDigitalActionData(action, &actionData, sizeof(actionData), vr::k_ulInvalidInputValueHandle);
-    if (pDevicePath) {
-        *pDevicePath = vr::k_ulInvalidInputValueHandle;
-        if (actionData.bActive) {
-            vr::InputOriginInfo_t originInfo;
-            if (vr::VRInputError_None ==
-                vr::VRInput()->GetOriginTrackedDeviceInfo(actionData.activeOrigin, &originInfo, sizeof(originInfo))) {
-                *pDevicePath = originInfo.devicePath;
-            }
-        }
-    }
-    return actionData.bActive && actionData.bState;
-}
-
-//-----------------------------------------------------------------------------
 // Purpose: Constructor
 //-----------------------------------------------------------------------------
-CMainApplication::CMainApplication(int argc, char *argv[])
+VRManager::VRManager(int argc, char *argv[])
     : m_pCompanionWindow(NULL),
       m_pContext(NULL),
       m_nCompanionWindowWidth(1280),
@@ -273,35 +79,16 @@ CMainApplication::CMainApplication(int argc, char *argv[])
       m_iValidPoseCount(0),
       m_iSceneVolumeInit(20),
       m_strPoseClasses("") {
-    // other initialization tasks are done in BInit
+    // other initialization tasks are done in Init
     memset(m_rDevClassChar, 0, sizeof(m_rDevClassChar));
 };
 
 //-----------------------------------------------------------------------------
 // Purpose: Destructor
 //-----------------------------------------------------------------------------
-CMainApplication::~CMainApplication() {}
+VRManager::~VRManager() {}
 
-//-----------------------------------------------------------------------------
-// Purpose: Helper to get a string from a tracked device property and turn it
-//			into a std::string
-//-----------------------------------------------------------------------------
-std::string GetTrackedDeviceString(vr::TrackedDeviceIndex_t unDevice, vr::TrackedDeviceProperty prop,
-                                   vr::TrackedPropertyError *peError = NULL) {
-    uint32_t unRequiredBufferLen = vr::VRSystem()->GetStringTrackedDeviceProperty(unDevice, prop, NULL, 0, peError);
-    if (unRequiredBufferLen == 0) return "";
-
-    char *pchBuffer = new char[unRequiredBufferLen];
-    unRequiredBufferLen = vr::VRSystem()->GetStringTrackedDeviceProperty(unDevice, prop, pchBuffer, unRequiredBufferLen, peError);
-    std::string sResult = pchBuffer;
-    delete[] pchBuffer;
-    return sResult;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
-bool CMainApplication::BInit() {
+bool VRManager::Init() {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) < 0) {
         printf("%s - SDL could not initialize! SDL Error: %s\n", __FUNCTION__, SDL_GetError());
         return false;
@@ -332,7 +119,7 @@ bool CMainApplication::BInit() {
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 0);
 
     m_pCompanionWindow =
-        SDL_CreateWindow("hellovr", nWindowPosX, nWindowPosY, m_nCompanionWindowWidth, m_nCompanionWindowHeight, unWindowFlags);
+        SDL_CreateWindow("MazeGameVR", nWindowPosX, nWindowPosY, m_nCompanionWindowWidth, m_nCompanionWindowHeight, unWindowFlags);
     if (m_pCompanionWindow == NULL) {
         printf("%s - Window could not be created! SDL Error: %s\n", __FUNCTION__, SDL_GetError());
         return false;
@@ -370,12 +157,12 @@ bool CMainApplication::BInit() {
     m_iTexture = 0;
     m_uiVertcount = 0;
 
-    if (!BInitGL()) {
+    if (!InitGL()) {
         printf("%s - Unable to initialize OpenGL!\n", __FUNCTION__);
         return false;
     }
 
-    if (!BInitCompositor()) {
+    if (!InitCompositor()) {
         printf("%s - Failed to initialize VR Compositor!\n", __FUNCTION__);
         return false;
     }
@@ -391,7 +178,7 @@ bool CMainApplication::BInit() {
 //          If failure occurred in a module other than shaders, the function
 //          may return true or throw an error.
 //-----------------------------------------------------------------------------
-bool CMainApplication::BInitGL() {
+bool VRManager::InitGL() {
     SetupScene();
     SetupCameras();
     SetupStereoRenderTargets();
@@ -404,7 +191,7 @@ bool CMainApplication::BInitGL() {
 // Purpose: Initialize Compositor. Returns true if the compositor was
 //          successfully initialized, false otherwise.
 //-----------------------------------------------------------------------------
-bool CMainApplication::BInitCompositor() {
+bool VRManager::InitCompositor() {
     vr::EVRInitError peError = vr::VRInitError_None;
 
     if (!vr::VRCompositor()) {
@@ -418,7 +205,7 @@ bool CMainApplication::BInitCompositor() {
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CMainApplication::Shutdown() {
+void VRManager::Shutdown() {
     if (m_pHMD) {
         vr::VR_Shutdown();
         m_pHMD = NULL;
@@ -435,7 +222,7 @@ void CMainApplication::Shutdown() {
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CMainApplication::RunMainLoop() {
+void VRManager::RunMainLoop() {
     bool quit = false;
 
     SDL_StartTextInput();
@@ -479,7 +266,7 @@ void CMainApplication::RunMainLoop() {
 //-----------------------------------------------------------------------------
 // Purpose: Processes a single VR event
 //-----------------------------------------------------------------------------
-void CMainApplication::ProcessVREvent(const vr::VREvent_t &event) {
+void VRManager::ProcessVREvent(const vr::VREvent_t &event) {
     switch (event.eventType) {
         case vr::VREvent_TrackedDeviceDeactivated: {
             printf("Device %u detached.\n", event.trackedDeviceIndex);
@@ -490,10 +277,7 @@ void CMainApplication::ProcessVREvent(const vr::VREvent_t &event) {
     }
 }
 
-//-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
-void CMainApplication::RenderFrame() {
+void VRManager::RenderFrame() {
     // for now as fast as possible
     if (m_pHMD) {
         RenderStereoTargets();
@@ -510,10 +294,7 @@ void CMainApplication::RenderFrame() {
     UpdateHMDMatrixPose();
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: create a sea of cubes
-//-----------------------------------------------------------------------------
-void CMainApplication::SetupScene() {
+void VRManager::SetupScene() {
     std::string map_file = "map2.txt";
     map = map_loader.LoadMap(map_file);
     player = new Player(&camera, map);
@@ -541,7 +322,7 @@ void CMainApplication::SetupScene() {
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CMainApplication::SetupCameras() {
+void VRManager::SetupCameras() {
     m_mat4ProjectionLeft = GetHMDMatrixProjectionEye(vr::Eye_Left);
     m_mat4ProjectionRight = GetHMDMatrixProjectionEye(vr::Eye_Right);
     m_mat4eyePosLeft = GetHMDMatrixPoseEye(vr::Eye_Left);
@@ -552,7 +333,7 @@ void CMainApplication::SetupCameras() {
 // Purpose: Creates a frame buffer. Returns true if the buffer was set up.
 //          Returns false if the setup failed.
 //-----------------------------------------------------------------------------
-bool CMainApplication::CreateFrameBuffer(int nWidth, int nHeight, FramebufferDesc &framebufferDesc) {
+bool VRManager::CreateFrameBuffer(int nWidth, int nHeight, FramebufferDesc &framebufferDesc) {
     glGenFramebuffers(1, &framebufferDesc.m_nRenderFramebufferId);
     glBindFramebuffer(GL_FRAMEBUFFER, framebufferDesc.m_nRenderFramebufferId);
 
@@ -590,7 +371,7 @@ bool CMainApplication::CreateFrameBuffer(int nWidth, int nHeight, FramebufferDes
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-bool CMainApplication::SetupStereoRenderTargets() {
+bool VRManager::SetupStereoRenderTargets() {
     if (!m_pHMD) return false;
 
     m_pHMD->GetRecommendedRenderTargetSize(&m_nRenderWidth, &m_nRenderHeight);
@@ -604,7 +385,7 @@ bool CMainApplication::SetupStereoRenderTargets() {
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CMainApplication::SetupCompanionWindow() {
+void VRManager::SetupCompanionWindow() {
     if (!m_pHMD) return;
 
     std::vector<VertexDataWindow> vVerts;
@@ -653,7 +434,7 @@ void CMainApplication::SetupCompanionWindow() {
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CMainApplication::RenderStereoTargets() {
+void VRManager::RenderStereoTargets() {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glEnable(GL_MULTISAMPLE);
 
@@ -698,7 +479,7 @@ void CMainApplication::RenderStereoTargets() {
 //-----------------------------------------------------------------------------
 // Purpose: Renders a scene with respect to nEye.
 //-----------------------------------------------------------------------------
-void CMainApplication::RenderScene(vr::Hmd_Eye nEye) {
+void VRManager::RenderScene(vr::Hmd_Eye nEye) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
 
@@ -717,7 +498,7 @@ void CMainApplication::RenderScene(vr::Hmd_Eye nEye) {
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CMainApplication::RenderCompanionWindow() {
+void VRManager::RenderCompanionWindow() {
     glDisable(GL_DEPTH_TEST);
     glViewport(0, 0, m_nCompanionWindowWidth, m_nCompanionWindowHeight);
     glActiveTexture(GL_TEXTURE0);  // Must reset this, as this is where the companion window shader expects these textures
@@ -749,7 +530,7 @@ void CMainApplication::RenderCompanionWindow() {
 //-----------------------------------------------------------------------------
 // Purpose: Gets a Matrix Projection Eye with respect to nEye.
 //-----------------------------------------------------------------------------
-mat4 CMainApplication::GetHMDMatrixProjectionEye(vr::Hmd_Eye nEye) {
+mat4 VRManager::GetHMDMatrixProjectionEye(vr::Hmd_Eye nEye) {
     if (!m_pHMD) return mat4();
 
     vr::HmdMatrix44_t mat = m_pHMD->GetProjectionMatrix(nEye, m_fNearClip, m_fFarClip);
@@ -761,22 +542,19 @@ mat4 CMainApplication::GetHMDMatrixProjectionEye(vr::Hmd_Eye nEye) {
 //-----------------------------------------------------------------------------
 // Purpose: Gets an HMDMatrixPoseEye with respect to nEye.
 //-----------------------------------------------------------------------------
-mat4 CMainApplication::GetHMDMatrixPoseEye(vr::Hmd_Eye nEye) {
+mat4 VRManager::GetHMDMatrixPoseEye(vr::Hmd_Eye nEye) {
     if (!m_pHMD) return mat4();
 
     vr::HmdMatrix34_t matEyeRight = m_pHMD->GetEyeToHeadTransform(nEye);
-    mat4 matrixObj(matEyeRight.m[0][0], matEyeRight.m[1][0], matEyeRight.m[2][0], 0.0, matEyeRight.m[0][1], matEyeRight.m[1][1],
-                   matEyeRight.m[2][1], 0.0, matEyeRight.m[0][2], matEyeRight.m[1][2], matEyeRight.m[2][2], 0.0, matEyeRight.m[0][3],
-                   matEyeRight.m[1][3], matEyeRight.m[2][3], 1.0f);
 
-    return glm::inverse(matrixObj);
+    return glm::inverse(ConvertSteamVRMatrixToMat4(matEyeRight));
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: Gets a Current View Projection Matrix with respect to nEye,
 //          which may be an Eye_Left or an Eye_Right.
 //-----------------------------------------------------------------------------
-mat4 CMainApplication::GetCurrentViewProjectionMatrix(vr::Hmd_Eye nEye) {
+mat4 VRManager::GetCurrentViewProjectionMatrix(vr::Hmd_Eye nEye) {
     mat4 matMVP;
     if (nEye == vr::Eye_Left) {
         matMVP = m_mat4ProjectionLeft * m_mat4eyePosLeft;
@@ -798,7 +576,7 @@ mat4 CMainApplication::GetCurrentViewProjectionMatrix(vr::Hmd_Eye nEye) {
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CMainApplication::UpdateHMDMatrixPose() {
+void VRManager::UpdateHMDMatrixPose() {
     if (!m_pHMD) return;
 
     vr::VRCompositor()->WaitGetPoses(m_rTrackedDevicePose, vr::k_unMaxTrackedDeviceCount, NULL, 0);
@@ -845,7 +623,7 @@ void CMainApplication::UpdateHMDMatrixPose() {
 //-----------------------------------------------------------------------------
 // Purpose: Converts a SteamVR matrix to our local matrix class
 //-----------------------------------------------------------------------------
-mat4 CMainApplication::ConvertSteamVRMatrixToMat4(const vr::HmdMatrix34_t &matPose) {
+mat4 VRManager::ConvertSteamVRMatrixToMat4(const vr::HmdMatrix34_t &matPose) {
     mat4 matrixObj(matPose.m[0][0], matPose.m[1][0], matPose.m[2][0], 0.0, matPose.m[0][1], matPose.m[1][1], matPose.m[2][1], 0.0,
                    matPose.m[0][2], matPose.m[1][2], matPose.m[2][2], 0.0, matPose.m[0][3], matPose.m[1][3], matPose.m[2][3], 1.0f);
     return matrixObj;
@@ -855,9 +633,9 @@ mat4 CMainApplication::ConvertSteamVRMatrixToMat4(const vr::HmdMatrix34_t &matPo
 // Purpose:
 //-----------------------------------------------------------------------------
 int main(int argc, char *argv[]) {
-    CMainApplication *pMainApplication = new CMainApplication(argc, argv);
+    VRManager *pMainApplication = new VRManager(argc, argv);
 
-    if (!pMainApplication->BInit()) {
+    if (!pMainApplication->Init()) {
         pMainApplication->Shutdown();
         return 1;
     }

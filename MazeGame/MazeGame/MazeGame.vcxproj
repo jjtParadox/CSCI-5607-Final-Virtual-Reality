@@ -165,7 +165,7 @@
     <ClCompile Include="game_object.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="goal.cpp" />
-    <ClCompile Include="hellovr_opengl_main.cpp" />
+    <ClCompile Include="vr_manager.cpp" />
     <ClCompile Include="key.cpp" />
     <ClCompile Include="map_loader.cpp" />
     <ClCompile Include="material.cpp" />
@@ -202,6 +202,7 @@
     <ClInclude Include="texture_manager.h" />
     <ClInclude Include="transformable.h" />
     <ClInclude Include="updatable.h" />
+    <ClInclude Include="vr_manager.h" />
     <ClInclude Include="wall.h" />
     <ClInclude Include="map.h" />
   </ItemGroup>
