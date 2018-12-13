@@ -17,6 +17,7 @@ class Transformable : public std::enable_shared_from_this<Transformable> {
     void Scale(float scale);
     void ApplyMatrix(const glm::mat4 matrix);
     void ResetAndSetTranslation(const glm::vec3& translation);
+    void Set(const glm::mat4 new_local_transform);
 
     void AddChild(std::shared_ptr<Transformable> child);
     void RemoveChild(std::shared_ptr<Transformable> child);

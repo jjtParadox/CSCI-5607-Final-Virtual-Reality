@@ -3,10 +3,10 @@
 #include <OpenVR/openvr.h>
 #include <SDL.h>
 #include <glm.hpp>
-#include "camera.h"
 #include "map.h"
 #include "map_loader.h"
 #include "player.h"
+#include "vr_camera.h"
 
 class VRManager {
    public:
@@ -26,23 +26,19 @@ class VRManager {
     void SetupScene();
     bool SetupStereoRenderTargets();
     void SetupCompanionWindow();
-    void SetupCameras();
 
     void RenderStereoTargets();
     void RenderCompanionWindow();
     void RenderScene(vr::Hmd_Eye nEye);
 
-    glm::mat4 GetHMDMatrixProjectionEye(vr::Hmd_Eye nEye);
-    glm::mat4 GetHMDMatrixPoseEye(vr::Hmd_Eye nEye);
-    glm::mat4 GetCurrentViewProjectionMatrix(vr::Hmd_Eye nEye);
     void UpdateHMDMatrixPose();
 
-    glm::mat4 ConvertSteamVRMatrixToMat4(const vr::HmdMatrix34_t &matPose);
+    static glm::mat4 ConvertSteamVRMatrixToMat4(const vr::HmdMatrix34_t &matPose);
 
    private:
     MapLoader map_loader;
     Map *map;
-    Camera camera;
+    VRCamera *vr_camera_;
     Player *player;
 
     vr::IVRSystem *m_pHMD;
@@ -81,17 +77,6 @@ class VRManager {
     std::string m_strPoseClasses;                         // what classes we saw poses for this frame
     char m_rDevClassChar[vr::k_unMaxTrackedDeviceCount];  // for each device, a character representing its class
 
-    int m_iSceneVolumeWidth;
-    int m_iSceneVolumeHeight;
-    int m_iSceneVolumeDepth;
-    float m_fScaleSpacing;
-    float m_fScale;
-
-    int m_iSceneVolumeInit;  // if you want something other than the default 20x20x20
-
-    float m_fNearClip;
-    float m_fFarClip;
-
     GLuint m_iTexture;
 
     unsigned int m_uiVertcount;
@@ -101,19 +86,6 @@ class VRManager {
     GLuint m_glCompanionWindowIDVertBuffer;
     GLuint m_glCompanionWindowIDIndexBuffer;
     unsigned int m_uiCompanionWindowIndexSize;
-
-    glm::mat4 m_mat4HMDPose;
-    glm::mat4 m_mat4eyePosLeft;
-    glm::mat4 m_mat4eyePosRight;
-
-    glm::mat4 m_mat4ProjectionCenter;
-    glm::mat4 m_mat4ProjectionLeft;
-    glm::mat4 m_mat4ProjectionRight;
-
-    struct VertexDataScene {
-        glm::vec3 position;
-        glm::vec2 texCoord;
-    };
 
     struct VertexDataWindow {
         glm::vec2 position;

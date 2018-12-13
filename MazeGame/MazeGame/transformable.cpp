@@ -59,6 +59,11 @@ void Transformable::ResetAndSetTranslation(const glm::vec3& translation) {
     Translate(translation);
 }
 
+void Transformable::Set(const glm::mat4 new_local_transform) {
+    local_transform_ = new_local_transform;
+    RecalculateWorldTransform();
+}
+
 void Transformable::AddChild(std::shared_ptr<Transformable> child) {
     children_.insert(child);
     if (!child->IsParent(shared_from_this())) {

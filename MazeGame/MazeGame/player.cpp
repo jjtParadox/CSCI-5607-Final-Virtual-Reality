@@ -7,7 +7,7 @@
 #include "map.h"
 #include "player.h"
 
-Player::Player(Camera* camera, Map* map) : GameObject() {
+Player::Player(VRCamera* camera, Map* map) : GameObject() {
     camera_ = camera;
     if (camera == nullptr) {
         printf("Player was given null camera. Exiting...\n");
@@ -32,50 +32,29 @@ Player::Player(Camera* camera, Map* map) : GameObject() {
     box_[7] = glm::vec4(-num, num, PLAYER_HALF_HEIGHT, 1);
 
     glm::vec3 start_position = map_->SpawnPosition();
-    start_position.z = START_CAMERA_Z;
+    // start_position.z = START_CAMERA_Z;
     camera->SetPosition(start_position);
 
-    glm::vec3 look_position = map_->GoalPosition();
-    look_position.z = start_position.z;
-    camera->SetLookAt(look_position);
+    // glm::vec3 look_position = map_->GoalPosition();
+    // look_position.z = start_position.z;
+    // camera->SetLookAt(look_position);
 
-    transform->SetParent(camera->transform);
+    camera->MakeChildOfHeadset(transform);
     RegenerateBoundingBox();
 
     held_key_ = nullptr;
 }
 
 void Player::Update() {
-    float base_player_height = START_CAMERA_Z;
-    if (crouching) base_player_height -= CROUCH_DISTANCE;
-
-    //// Jump logic ////
-    if (!on_ground) {
-        vertical_velocity -= GRAVITY;
-        if (transform->Z() + vertical_velocity < base_player_height) {
-            vertical_velocity = base_player_height - transform->Z();
-            on_ground = true;
-        }
-    } else {
-        forward_velocity = 0;
-        right_velocity = 0;
-    }
-
     float move_speed = CAMERA_MOVE_SPEED;
-    if (!on_ground && !stuck_in_object) {
-        move_speed = move_speed * JUMPING_LATERAL_MOVEMENT_FACTOR;
-    }
-    if (crouching) {
-        move_speed *= CROUCH_SPEED_FACTOR;
-    }
 
     //// Player movement ////
     const Uint8* key_state = SDL_GetKeyboardState(NULL);
-    if (key_state[SDL_SCANCODE_RIGHT]) {
+    /*if (key_state[SDL_SCANCODE_RIGHT]) {
         camera_->Rotate(0, -CAMERA_ROTATION_SPEED);
     } else if (key_state[SDL_SCANCODE_LEFT]) {
         camera_->Rotate(0, CAMERA_ROTATION_SPEED);
-    }
+    }*/
 
     if (key_state[SDL_SCANCODE_W]) {
         forward_velocity += move_speed;  // movement forward
@@ -119,11 +98,8 @@ void Player::Update() {
         InitializeKeyLocation(held_key_);
     }
 
-    //// Reset movement variables ////
-    if (on_ground) {
-        vertical_velocity = 0;
-    }
-    on_ground = transform->Z() <= base_player_height;
+    forward_velocity = 0;
+    right_velocity = 0;
 }
 
 void Player::UseKey() {
@@ -135,29 +111,6 @@ void Player::DropKey() {
 
     held_key_->Drop();
     held_key_ = nullptr;
-}
-
-void Player::Jump() {
-    if (on_ground) {
-        vertical_velocity = JUMP_VELOCITY;
-        on_ground = false;
-    }
-}
-
-void Player::Crouch() {
-    if (!crouching) {
-        crouching = true;
-        camera_->transform->Translate(0, 0, -CROUCH_DISTANCE);
-    }
-}
-
-void Player::UnCrouch() {
-    crouching = false;
-    camera_->transform->Translate(0, 0, CROUCH_DISTANCE);
-}
-
-bool Player::IsCrouching() const {
-    return crouching;
 }
 
 void Player::InitializeKeyLocation(Key* key) {

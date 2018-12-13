@@ -77,7 +77,6 @@ VRManager::VRManager(int argc, char *argv[])
       m_unSceneVAO(0),
       m_nSceneMatrixLocation(-1),
       m_iValidPoseCount(0),
-      m_iSceneVolumeInit(20),
       m_strPoseClasses("") {
     // other initialization tasks are done in Init
     memset(m_rDevClassChar, 0, sizeof(m_rDevClassChar));
@@ -143,19 +142,10 @@ bool VRManager::Init() {
 
     SDL_SetWindowTitle(m_pCompanionWindow, "MazeGameVR");
 
-    // cube array
-    m_iSceneVolumeWidth = m_iSceneVolumeInit;
-    m_iSceneVolumeHeight = m_iSceneVolumeInit;
-    m_iSceneVolumeDepth = m_iSceneVolumeInit;
-
-    m_fScale = 0.3f;
-    m_fScaleSpacing = 4.0f;
-
-    m_fNearClip = 0.1f;
-    m_fFarClip = 500.0f;
-
     m_iTexture = 0;
     m_uiVertcount = 0;
+
+    vr_camera_ = new VRCamera(0.1f, 500.0f, m_pHMD);
 
     if (!InitGL()) {
         printf("%s - Unable to initialize OpenGL!\n", __FUNCTION__);
@@ -167,7 +157,9 @@ bool VRManager::Init() {
         return false;
     }
 
-    vr::VRCompositor()->SetTrackingSpace(vr::ETrackingUniverseOrigin::TrackingUniverseSeated);
+    // vr::VRCompositor()->SetTrackingSpace(vr::ETrackingUniverseOrigin::TrackingUniverseSeated);
+
+    vr_camera_->Setup();
 
     return true;
 }
@@ -180,7 +172,6 @@ bool VRManager::Init() {
 //-----------------------------------------------------------------------------
 bool VRManager::InitGL() {
     SetupScene();
-    SetupCameras();
     SetupStereoRenderTargets();
     SetupCompanionWindow();
 
@@ -243,7 +234,7 @@ void VRManager::RunMainLoop() {
             if (windowEvent.type == SDL_MOUSEMOTION && SDL_GetRelativeMouseMode() == SDL_TRUE) {
                 // printf("Mouse movement (xrel, yrel): (%i, %i)\n", windowEvent.motion.xrel, windowEvent.motion.yrel);
                 float factor = 0.002f;
-                camera.Rotate(0, -windowEvent.motion.xrel * factor);
+                // camera.Rotate(0, -windowEvent.motion.xrel * factor);
             }
 
             switch (windowEvent.window.event) {
@@ -297,7 +288,7 @@ void VRManager::RenderFrame() {
 void VRManager::SetupScene() {
     std::string map_file = "map2.txt";
     map = map_loader.LoadMap(map_file);
-    player = new Player(&camera, map);
+    player = new Player(vr_camera_, map);
     map->Add(player);
 
     TextureManager::InitTextures();
@@ -317,16 +308,6 @@ void VRManager::SetupScene() {
     glEnable(GL_DEPTH_TEST);
 
     printf("%s\n", INSTRUCTIONS);
-}
-
-//-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
-void VRManager::SetupCameras() {
-    m_mat4ProjectionLeft = GetHMDMatrixProjectionEye(vr::Eye_Left);
-    m_mat4ProjectionRight = GetHMDMatrixProjectionEye(vr::Eye_Right);
-    m_mat4eyePosLeft = GetHMDMatrixPoseEye(vr::Eye_Left);
-    m_mat4eyePosRight = GetHMDMatrixPoseEye(vr::Eye_Right);
 }
 
 //-----------------------------------------------------------------------------
@@ -368,9 +349,6 @@ bool VRManager::CreateFrameBuffer(int nWidth, int nHeight, FramebufferDesc &fram
     return true;
 }
 
-//-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
 bool VRManager::SetupStereoRenderTargets() {
     if (!m_pHMD) return false;
 
@@ -382,9 +360,6 @@ bool VRManager::SetupStereoRenderTargets() {
     return true;
 }
 
-//-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
 void VRManager::SetupCompanionWindow() {
     if (!m_pHMD) return;
 
@@ -431,9 +406,6 @@ void VRManager::SetupCompanionWindow() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-//-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
 void VRManager::RenderStereoTargets() {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glEnable(GL_MULTISAMPLE);
@@ -484,10 +456,11 @@ void VRManager::RenderScene(vr::Hmd_Eye nEye) {
     glEnable(GL_DEPTH_TEST);
 
     glUseProgram(ShaderManager::Textured_Shader);
-    glUniformMatrix4fv(m_nSceneMatrixLocation, 1, GL_FALSE, glm::value_ptr(GetCurrentViewProjectionMatrix(nEye)));
+    glUniformMatrix4fv(m_nSceneMatrixLocation, 1, GL_FALSE, glm::value_ptr(vr_camera_->GetCurrentWorldToViewMatrix(nEye)));
+    glUniformMatrix4fv(ShaderManager::Attributes.view, 1, GL_FALSE, glm::value_ptr(glm::mat4()));  // Temporary
     TextureManager::Update();
     player->Update();
-    camera.Update();
+    // camera.Update();
     glBindVertexArray(m_unSceneVAO);
     map->UpdateAll();
     glBindVertexArray(0);
@@ -495,9 +468,6 @@ void VRManager::RenderScene(vr::Hmd_Eye nEye) {
     glUseProgram(0);
 }
 
-//-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
 void VRManager::RenderCompanionWindow() {
     glDisable(GL_DEPTH_TEST);
     glViewport(0, 0, m_nCompanionWindowWidth, m_nCompanionWindowHeight);
@@ -527,55 +497,6 @@ void VRManager::RenderCompanionWindow() {
     glUseProgram(0);
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: Gets a Matrix Projection Eye with respect to nEye.
-//-----------------------------------------------------------------------------
-mat4 VRManager::GetHMDMatrixProjectionEye(vr::Hmd_Eye nEye) {
-    if (!m_pHMD) return mat4();
-
-    vr::HmdMatrix44_t mat = m_pHMD->GetProjectionMatrix(nEye, m_fNearClip, m_fFarClip);
-
-    return mat4(mat.m[0][0], mat.m[1][0], mat.m[2][0], mat.m[3][0], mat.m[0][1], mat.m[1][1], mat.m[2][1], mat.m[3][1], mat.m[0][2],
-                mat.m[1][2], mat.m[2][2], mat.m[3][2], mat.m[0][3], mat.m[1][3], mat.m[2][3], mat.m[3][3]);
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Gets an HMDMatrixPoseEye with respect to nEye.
-//-----------------------------------------------------------------------------
-mat4 VRManager::GetHMDMatrixPoseEye(vr::Hmd_Eye nEye) {
-    if (!m_pHMD) return mat4();
-
-    vr::HmdMatrix34_t matEyeRight = m_pHMD->GetEyeToHeadTransform(nEye);
-
-    return glm::inverse(ConvertSteamVRMatrixToMat4(matEyeRight));
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Gets a Current View Projection Matrix with respect to nEye,
-//          which may be an Eye_Left or an Eye_Right.
-//-----------------------------------------------------------------------------
-mat4 VRManager::GetCurrentViewProjectionMatrix(vr::Hmd_Eye nEye) {
-    mat4 matMVP;
-    if (nEye == vr::Eye_Left) {
-        matMVP = m_mat4ProjectionLeft * m_mat4eyePosLeft;
-    } else if (nEye == vr::Eye_Right) {
-        matMVP = m_mat4ProjectionRight * m_mat4eyePosRight;
-    }
-
-    matMVP = matMVP * m_mat4HMDPose;
-    matMVP = glm::rotate(matMVP, -(float)(M_PI / 2.0f), vec3(1, 0, 0));  // Convert coordinate systems
-    matMVP = glm::scale(matMVP, vec3(1.5, 1.5, 2.0));                    // Make the world larger
-
-    mat4 worldPosToCameraPos = player->transform->WorldTransform();
-    worldPosToCameraPos = glm::inverse(worldPosToCameraPos);
-    matMVP = matMVP * worldPosToCameraPos;  // Kind of an addition for world to camera
-
-    return matMVP;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
 void VRManager::UpdateHMDMatrixPose() {
     if (!m_pHMD) return;
 
@@ -614,9 +535,7 @@ void VRManager::UpdateHMDMatrixPose() {
     }
 
     if (m_rTrackedDevicePose[vr::k_unTrackedDeviceIndex_Hmd].bPoseIsValid) {
-        m_mat4HMDPose = m_rmat4DevicePose[vr::k_unTrackedDeviceIndex_Hmd];
-        printf("HMD Pose: %f, %f, %f\n", m_mat4HMDPose[3][0], m_mat4HMDPose[3][1], m_mat4HMDPose[3][2]);
-        m_mat4HMDPose = glm::inverse(m_mat4HMDPose);
+        vr_camera_->SetCurrentPose(m_rmat4DevicePose[vr::k_unTrackedDeviceIndex_Hmd]);
     }
 }
 
@@ -629,9 +548,6 @@ mat4 VRManager::ConvertSteamVRMatrixToMat4(const vr::HmdMatrix34_t &matPose) {
     return matrixObj;
 }
 
-//-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
 int main(int argc, char *argv[]) {
     VRManager *pMainApplication = new VRManager(argc, argv);
 
