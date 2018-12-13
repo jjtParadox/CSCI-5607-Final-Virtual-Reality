@@ -87,17 +87,17 @@ mat4 VRCamera::GetEyeOffset(vr::Hmd_Eye eye) {
 }
 
 vec3 VRCamera::HorizontalForward() {
-    vec4 openvr_forward = current_pose_ * vec4(0, 0, -1, 0);
-    vec4 real_forward = glm::rotate(openvr_forward, (float)(M_PI / 2.0f), vec3(1, 0, 0));
-    vec3 world_coordinates_forward = vec3(world_anchor_->WorldTransform() * real_forward);
-    world_coordinates_forward.z = 0;  // Ensure horizontal
-    return glm::normalize(world_coordinates_forward);
+    return GetHorizontalDirection(vec4(0, 0, -1, 0));
 }
 
 vec3 VRCamera::HorizontalRight() {
-    vec4 openvr_right = current_pose_ * vec4(1, 0, 0, 0);
-    vec4 real_right = glm::rotate(openvr_right, (float)(M_PI / 2.0f), vec3(1, 0, 0));
-    vec3 world_coordinates_right = vec3(world_anchor_->WorldTransform() * real_right);
-    world_coordinates_right.z = 0;  // Ensure horizontal
-    return glm::normalize(world_coordinates_right);
+    return GetHorizontalDirection(vec4(1, 0, 0, 0));
+}
+
+glm::vec3 VRCamera::GetHorizontalDirection(vec4 pose_direction) {
+    vec4 openvr_dir = current_pose_ * pose_direction;
+    vec4 ourcoords_dir = glm::rotate(openvr_dir, (float)(M_PI / 2.0f), vec3(1, 0, 0));
+    vec3 real_dir = vec3(ourcoords_dir);
+    real_dir.z = 0;  // Ensure horizontal
+    return glm::normalize(real_dir);
 }

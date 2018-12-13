@@ -25,6 +25,7 @@ class VRCamera {
 
     glm::vec3 HorizontalForward();
     glm::vec3 HorizontalRight();
+    glm::vec3 GetHorizontalDirection(glm::vec4 pose_direction);
 
     glm::mat4 projection_left, projection_right;
     glm::mat4 eye_offset_left, eye_offset_right;
