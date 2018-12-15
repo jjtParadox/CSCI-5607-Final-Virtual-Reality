@@ -145,6 +145,8 @@ Material MapLoader::GetMaterialForCharacter(char c) {
 
 void MapLoader::LoadAssets() {
     wall_model_ = new Model("models/cube.txt");
+    BoundingBox::debug_render_model = wall_model_;
+
     door_model_ = new Model("models/knot.txt");
     key_model_ = new Model("models/mjolnir.obj");
     start_model_ = new Model("models/sphere.txt");

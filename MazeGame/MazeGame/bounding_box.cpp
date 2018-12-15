@@ -1,6 +1,9 @@
 #include <algorithm>
 #include <cmath>
+#include <gtc/type_ptr.hpp>
 #include "bounding_box.h"
+#include "shader_manager.h"
+#include "texture_manager.h"
 
 using std::max;
 using std::min;
@@ -45,6 +48,31 @@ bool BoundingBox::ContainsOrIntersects(const BoundingBox& other) const {
            Overlaps(other.min_->Z(), other.max_->Z(), min_->Z(), max_->Z());
 }
 
+void BoundingBox::Render() const {
+    glm::vec3 color = glm::vec3(1, 0, 0);
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+    glm::mat4 model_matrix;
+    float side_length = max_->X() - min_->X();
+    glm::vec3 center = glm::vec3(max_->WorldPosition() + min_->WorldPosition());
+    center *= 0.5f;
+    model_matrix = glm::translate(model_matrix, center);
+    model_matrix = glm::scale(model_matrix, glm::vec3(side_length));
+
+    glUniformMatrix4fv(ShaderManager::Attributes.model, 1, GL_FALSE, glm::value_ptr(model_matrix));
+
+    // glUniformMatrix4fv(ShaderManager::Attributes.model, 1, GL_FALSE,
+    //                   glm::value_ptr(transform->WorldTransform()));  // pass model matrix to shader
+
+    glUniform1i(ShaderManager::Attributes.texID, UNTEXTURED);
+    glUniform3fv(ShaderManager::Attributes.color, 1, glm::value_ptr(color));  // Set the color
+
+    glDrawArrays(GL_TRIANGLES, debug_render_model->vbo_vertex_start_index_, debug_render_model->NumVerts());
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+}
+
 glm::vec3 BoundingBox::Max() const {
     return glm::vec3(max_->X(), max_->Y(), max_->Z());
 }
@@ -69,3 +97,5 @@ void BoundingBox::InitToBounds(glm::vec3 min, glm::vec3 max) {
     min_->SetParent(transform);
     max_->SetParent(transform);
 }
+
+Model* BoundingBox::debug_render_model;

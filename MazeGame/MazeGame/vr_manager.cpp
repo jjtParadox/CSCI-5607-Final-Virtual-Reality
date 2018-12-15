@@ -286,7 +286,7 @@ void VRManager::RenderFrame() {
 }
 
 void VRManager::SetupScene() {
-    std::string map_file = "map2.txt";
+    std::string map_file = "map1.txt";
     map = map_loader.LoadMap(map_file);
     player = new Player(vr_camera_, map);
     map->Add(player);

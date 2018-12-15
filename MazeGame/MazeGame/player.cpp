@@ -100,6 +100,8 @@ void Player::Update() {
 
     forward_velocity = 0;
     right_velocity = 0;
+
+    bounding_box_->Render();
 }
 
 void Player::UseKey() {

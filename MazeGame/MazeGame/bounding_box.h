@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 #include <vector>
+#include "model.h"
 #include "transformable.h"
 
 /**
@@ -16,11 +17,14 @@ class BoundingBox {
     void ExpandToBound(const std::vector<BoundingBox> bounding_boxes);
 
     bool ContainsOrIntersects(const BoundingBox& other) const;
+    void Render() const;  // Renders the bounding box in as a wireframe
 
     glm::vec3 Max() const;
     glm::vec3 Min() const;
 
     std::shared_ptr<Transformable> transform;
+
+    static Model* debug_render_model;
 
    private:
     static bool Overlaps(double otherMin, double otherMax, double min, double max);
