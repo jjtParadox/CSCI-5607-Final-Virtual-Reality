@@ -46,6 +46,8 @@ void GameObject::Update() {
     }
 
     glDrawArrays(GL_TRIANGLES, model_->vbo_vertex_start_index_, model_->NumVerts());
+
+    bounding_box_->Render();
 }
 
 bool GameObject::IntersectsWith(const GameObject& other) const {

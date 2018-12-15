@@ -1,4 +1,5 @@
 #pragma once
+#include "glm.hpp"
 
 const bool DEBUG_ON = true;
 const int ELEMENTS_PER_VERT = 8;
@@ -16,6 +17,7 @@ const int TEXCOORD_OFFSET = 3;
 
 const float CAMERA_ROTATION_SPEED = 0.01f;
 const float CAMERA_MOVE_SPEED = 0.01f;
+const glm::vec3 world_scale = glm::vec3(1.5, 1.5, 2.0);
 const float MAX_MOVE_SPEED = 1.45f * CAMERA_MOVE_SPEED;
 
 const float ABSOLUTE_TOLERANCE = 0.00001f;

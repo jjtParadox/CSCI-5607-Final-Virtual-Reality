@@ -1,6 +1,7 @@
 #define _USE_MATH_DEFINES
 #include "vr_camera.h"
 
+#include "constants.h"
 #include "gtx/rotate_vector.hpp"
 #include "vr_manager.h"
 
@@ -40,7 +41,7 @@ glm::mat4 VRCamera::GetCurrentWorldToViewMatrix(vr::Hmd_Eye eye) {
 
     matMVP = matMVP * glm::inverse(current_pose_);
     matMVP = glm::rotate(matMVP, -(float)(M_PI / 2.0f), vec3(1, 0, 0));  // Convert coordinate systems
-    matMVP = glm::scale(matMVP, vec3(1.5, 1.5, 2.0));                    // Make the world larger
+    matMVP = glm::scale(matMVP, world_scale);                            // Make the world larger
 
     matMVP = matMVP * glm::inverse(world_anchor_->WorldTransform());  // Kind of an addition for world to camera
 
@@ -50,8 +51,8 @@ glm::mat4 VRCamera::GetCurrentWorldToViewMatrix(vr::Hmd_Eye eye) {
 void VRCamera::SetCurrentPose(mat4 new_hmd_pose) {
     // printf("HMD Pose: %f, %f, %f\n", new_hmd_pose[3][0], new_hmd_pose[3][1], new_hmd_pose[3][2]);
     vec3 pos = glm::rotate(vec3(new_hmd_pose[3]), (float)(M_PI / 2.0f), vec3(1, 0, 0));
+    pos /= world_scale;  // Convert from steamvr scale to world scale
     hmd_offset_->ResetAndSetTranslation(pos);
-    pos = hmd_offset_->WorldPosition();
     // printf("HMD Offset: %f, %f, %f\n", pos.x, pos.y, pos.z);
     current_pose_ = new_hmd_pose;
 }
