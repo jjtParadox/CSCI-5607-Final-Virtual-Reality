@@ -6,6 +6,7 @@
 int ShaderManager::InitShaders() {
     Textured_Shader = CompileShaderProgram("textured-Vertex.glsl", "textured-Fragment.glsl");
     CompanionWindow_Shader = CompileShaderProgram("companionWindow-Vertex.glsl", "companionWindow-Fragment.glsl");
+    RenderModel_Shader = CompileShaderProgram("renderModel-Vertex.glsl", "renderModel-Fragment.glsl");
 
     InitShaderAttributes();
 
@@ -138,5 +139,6 @@ void ShaderManager::VerifyShaderCompiled(GLuint shader) {
 
 GLuint ShaderManager::Textured_Shader;
 GLuint ShaderManager::CompanionWindow_Shader;
+GLuint ShaderManager::RenderModel_Shader;
 
 ShaderAttributes ShaderManager::Attributes;

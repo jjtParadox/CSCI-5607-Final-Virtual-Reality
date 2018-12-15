@@ -82,6 +82,7 @@ Map* MapLoader::LoadMap(const string& filename) {
                         break;
                     case 'S':
                         current_object = new Spawn(start_model_);
+                        printf("Placing spawn marker at %f, %f, %f\n", base_position.x, base_position.y, 0.0f);
                         current_object->transform->Translate(glm::vec3(base_position.x, base_position.y, 0));
                         current_object->transform->Scale(0.2f);
                         add_ground = true;

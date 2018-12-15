@@ -20,6 +20,7 @@ class ShaderManager {
 
     static GLuint Textured_Shader;
     static GLuint CompanionWindow_Shader;
+    static GLuint RenderModel_Shader;
     static ShaderAttributes Attributes;
 
    private:

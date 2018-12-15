@@ -1,4 +1,6 @@
 #pragma once
+#include <SDL_stdinc.h>
+#include <gtx/rotate_vector.hpp>
 #include "glm.hpp"
 
 const bool DEBUG_ON = true;
@@ -17,7 +19,6 @@ const int TEXCOORD_OFFSET = 3;
 
 const float CAMERA_ROTATION_SPEED = 0.01f;
 const float CAMERA_MOVE_SPEED = 0.01f;
-const glm::vec3 world_scale = glm::vec3(1.5, 1.5, 2.0);
 const float MAX_MOVE_SPEED = 1.45f * CAMERA_MOVE_SPEED;
 
 const float ABSOLUTE_TOLERANCE = 0.00001f;
@@ -37,3 +38,9 @@ const float DOOR_ROTATION_SPEED = 0.1f;
 const float KEY_ROTATION_SPEED = 0.005f;
 const float KEY_HEIGHT = 0.15f;
 const int KEY_DROP_PICKUP_COOLDOWN_MS = 3500;
+
+const glm::vec3 world_scale = glm::vec3(1.5, 1.5, 1.5);  // TODO: Remove this
+const glm::mat4 world_to_openvr_scale = glm::scale(glm::mat4(), glm::vec3(1.5, 1.5, 1.5));
+const glm::mat4 openvr_to_world_rotation = glm::rotate(glm::mat4(), (float)(M_PI / 2.0f), glm::vec3(1, 0, 0));
+const glm::mat4 openvr_to_world = openvr_to_world_rotation * glm::inverse(world_to_openvr_scale);
+const glm::mat4 world_to_openvr = glm::inverse(openvr_to_world_rotation) * world_to_openvr_scale;

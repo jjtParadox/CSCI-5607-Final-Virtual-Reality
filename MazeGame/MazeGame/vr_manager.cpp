@@ -40,26 +40,6 @@ const char *USAGE =
     "   This map must be in the root of the directory the game's being run from.\n"
     "   Example: -m map1.txt\n";
 
-#if defined(POSIX)
-#include "unistd.h"
-#endif
-
-#ifndef _WIN32
-#define APIENTRY
-#endif
-
-#ifndef _countof
-#define _countof(x) (sizeof(x) / sizeof((x)[0]))
-#endif
-
-void ThreadSleep(unsigned long nMilliseconds) {
-#if defined(_WIN32)
-    Sleep(nMilliseconds);
-#elif defined(POSIX)
-    usleep(nMilliseconds * 1000);
-#endif
-}
-
 static bool g_bPrintf = true;
 using glm::mat4;
 using glm::vec2;
@@ -161,6 +141,9 @@ bool VRManager::Init() {
 
     vr_camera_->Setup();
 
+    vr_input_manager_ = VRInputManager(m_pHMD, vr_camera_);
+    vr_input_manager_.Init();
+
     return true;
 }
 
@@ -248,6 +231,9 @@ void VRManager::RunMainLoop() {
                     break;
             }
         }
+
+        vr_input_manager_.HandleInput();
+
         RenderFrame();
     }
 
@@ -452,18 +438,22 @@ void VRManager::RenderStereoTargets() {
 // Purpose: Renders a scene with respect to nEye.
 //-----------------------------------------------------------------------------
 void VRManager::RenderScene(vr::Hmd_Eye nEye) {
+    mat4 current_world_to_view = vr_camera_->GetCurrentWorldToViewMatrix(nEye);
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
 
     glUseProgram(ShaderManager::Textured_Shader);
-    glUniformMatrix4fv(m_nSceneMatrixLocation, 1, GL_FALSE, glm::value_ptr(vr_camera_->GetCurrentWorldToViewMatrix(nEye)));
-    glUniformMatrix4fv(ShaderManager::Attributes.view, 1, GL_FALSE, glm::value_ptr(glm::mat4()));  // Temporary
+    glUniformMatrix4fv(m_nSceneMatrixLocation, 1, GL_FALSE, glm::value_ptr(current_world_to_view));
+    glUniformMatrix4fv(ShaderManager::Attributes.view, 1, GL_FALSE, glm::value_ptr(mat4()));  // Temporary
     TextureManager::Update();
     player->Update();
     // camera.Update();
     glBindVertexArray(m_unSceneVAO);
     map->UpdateAll();
     glBindVertexArray(0);
+
+    vr_input_manager_.RenderControllers(current_world_to_view);
 
     glUseProgram(0);
 }
@@ -546,6 +536,18 @@ mat4 VRManager::ConvertSteamVRMatrixToMat4(const vr::HmdMatrix34_t &matPose) {
     mat4 matrixObj(matPose.m[0][0], matPose.m[1][0], matPose.m[2][0], 0.0, matPose.m[0][1], matPose.m[1][1], matPose.m[2][1], 0.0,
                    matPose.m[0][2], matPose.m[1][2], matPose.m[2][2], 0.0, matPose.m[0][3], matPose.m[1][3], matPose.m[2][3], 1.0f);
     return matrixObj;
+}
+
+std::string VRManager::GetTrackedDeviceString(vr::TrackedDeviceIndex_t unDevice, vr::TrackedDeviceProperty prop,
+                                              vr::TrackedPropertyError *peError) {
+    uint32_t unRequiredBufferLen = vr::VRSystem()->GetStringTrackedDeviceProperty(unDevice, prop, NULL, 0, peError);
+    if (unRequiredBufferLen == 0) return "";
+
+    char *pchBuffer = new char[unRequiredBufferLen];
+    unRequiredBufferLen = vr::VRSystem()->GetStringTrackedDeviceProperty(unDevice, prop, pchBuffer, unRequiredBufferLen, peError);
+    std::string sResult = pchBuffer;
+    delete[] pchBuffer;
+    return sResult;
 }
 
 int main(int argc, char *argv[]) {

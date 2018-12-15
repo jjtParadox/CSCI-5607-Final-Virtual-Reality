@@ -15,6 +15,7 @@ class VRCamera {
     void SetCurrentPose(glm::mat4 new_hmd_pose);
 
     void MakeChildOfHeadset(std::shared_ptr<Transformable> child);
+    void MakeChildOfWorldAnchor(std::shared_ptr<Transformable> child);
     void SetPosition(glm::vec3 position);
     void Translate(float right, float absolute_up, float forward);
     glm::vec3 GetNormalizedLookPosition();

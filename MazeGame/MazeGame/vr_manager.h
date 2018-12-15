@@ -7,6 +7,7 @@
 #include "map_loader.h"
 #include "player.h"
 #include "vr_camera.h"
+#include "vr_input_manager.h"
 
 class VRManager {
    public:
@@ -34,12 +35,16 @@ class VRManager {
     void UpdateHMDMatrixPose();
 
     static glm::mat4 ConvertSteamVRMatrixToMat4(const vr::HmdMatrix34_t &matPose);
+    static std::string GetTrackedDeviceString(vr::TrackedDeviceIndex_t unDevice, vr::TrackedDeviceProperty prop,
+                                              vr::TrackedPropertyError *peError = NULL);
 
    private:
     MapLoader map_loader;
     Map *map;
     VRCamera *vr_camera_;
     Player *player;
+
+    VRInputManager vr_input_manager_;
 
     vr::IVRSystem *m_pHMD;
     std::string m_strDriver;

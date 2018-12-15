@@ -40,8 +40,7 @@ glm::mat4 VRCamera::GetCurrentWorldToViewMatrix(vr::Hmd_Eye eye) {
     }
 
     matMVP = matMVP * glm::inverse(current_pose_);
-    matMVP = glm::rotate(matMVP, -(float)(M_PI / 2.0f), vec3(1, 0, 0));  // Convert coordinate systems
-    matMVP = glm::scale(matMVP, world_scale);                            // Make the world larger
+    matMVP = matMVP * world_to_openvr;  // Rotate and scale world to convert to OpenVR coordinates
 
     matMVP = matMVP * glm::inverse(world_anchor_->WorldTransform());  // Kind of an addition for world to camera
 
@@ -59,6 +58,10 @@ void VRCamera::SetCurrentPose(mat4 new_hmd_pose) {
 
 void VRCamera::MakeChildOfHeadset(std::shared_ptr<Transformable> child) {
     hmd_offset_->AddChild(child);
+}
+
+void VRCamera::MakeChildOfWorldAnchor(std::shared_ptr<Transformable> child) {
+    world_anchor_->AddChild(child);
 }
 
 void VRCamera::SetPosition(vec3 position) {
@@ -95,7 +98,7 @@ vec3 VRCamera::HorizontalRight() {
     return GetHorizontalDirection(vec4(1, 0, 0, 0));
 }
 
-glm::vec3 VRCamera::GetHorizontalDirection(vec4 pose_direction) {
+vec3 VRCamera::GetHorizontalDirection(vec4 pose_direction) {
     vec4 openvr_dir = current_pose_ * pose_direction;
     vec4 ourcoords_dir = glm::rotate(openvr_dir, (float)(M_PI / 2.0f), vec3(1, 0, 0));
     vec3 real_dir = vec3(ourcoords_dir);

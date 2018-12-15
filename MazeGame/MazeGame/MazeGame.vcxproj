@@ -165,7 +165,9 @@
     <ClCompile Include="game_object.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="goal.cpp" />
+    <ClCompile Include="render_model.cpp" />
     <ClCompile Include="vr_camera.cpp" />
+    <ClCompile Include="vr_input_manager.cpp" />
     <ClCompile Include="vr_manager.cpp" />
     <ClCompile Include="key.cpp" />
     <ClCompile Include="map_loader.cpp" />
@@ -198,12 +200,14 @@
     <ClInclude Include="model_manager.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="player.h" />
+    <ClInclude Include="render_model.h" />
     <ClInclude Include="shader_manager.h" />
     <ClInclude Include="spawn.h" />
     <ClInclude Include="texture_manager.h" />
     <ClInclude Include="transformable.h" />
     <ClInclude Include="updatable.h" />
     <ClInclude Include="vr_camera.h" />
+    <ClInclude Include="vr_input_manager.h" />
     <ClInclude Include="vr_manager.h" />
     <ClInclude Include="wall.h" />
     <ClInclude Include="map.h" />
@@ -213,6 +217,8 @@
     <None Include="companionWindow-Fragment.glsl" />
     <None Include="companionWindow-Vertex.glsl" />
     <None Include="fragment.glsl" />
+    <None Include="renderModel-Fragment.glsl" />
+    <None Include="renderModel-Vertex.glsl" />
     <None Include="textured-Fragment.glsl" />
     <None Include="textured-Vertex.glsl" />
     <None Include="vertex.glsl" />
