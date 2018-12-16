@@ -32,12 +32,9 @@ Player::Player(VRCamera* camera, Map* map) : GameObject() {
     box_[7] = glm::vec4(-num, num, PLAYER_HALF_HEIGHT, 1);
 
     glm::vec3 start_position = map_->SpawnPosition();
-    // start_position.z = START_CAMERA_Z;
     camera->SetPosition(start_position);
 
-    // glm::vec3 look_position = map_->GoalPosition();
-    // look_position.z = start_position.z;
-    // camera->SetLookAt(look_position);
+    transform->SetInheritsRotation(false);
 
     camera->MakeChildOfHeadset(transform);
     RegenerateBoundingBox();

@@ -6,8 +6,8 @@
 
 class Transformable : public std::enable_shared_from_this<Transformable> {
    public:
-    Transformable();
-    Transformable(const glm::vec3& position);
+    explicit Transformable(bool inherits_rotation = true);
+    Transformable(const glm::vec3& position, bool inherits_rotation = true);
     virtual ~Transformable();
 
     void Rotate(float radians, const glm::vec3& around);
@@ -18,6 +18,8 @@ class Transformable : public std::enable_shared_from_this<Transformable> {
     void ApplyMatrix(const glm::mat4 matrix);
     void ResetAndSetTranslation(const glm::vec3& translation);
     void Set(const glm::mat4 new_local_transform);
+
+    void SetInheritsRotation(bool inherits_rotation);
 
     void AddChild(std::shared_ptr<Transformable> child);
     void RemoveChild(std::shared_ptr<Transformable> child);
@@ -40,6 +42,7 @@ class Transformable : public std::enable_shared_from_this<Transformable> {
     float Z() const;
     glm::vec3 WorldPosition() const;
     glm::vec3 LocalPosition() const;
+    glm::vec3 GetScale() const;
 
    private:
     void Reset();
@@ -49,4 +52,6 @@ class Transformable : public std::enable_shared_from_this<Transformable> {
     glm::mat4 world_transform_;  // This transform in world coordinates, with all parent transformations applied
     std::weak_ptr<Transformable> parent_;
     std::unordered_set<std::shared_ptr<Transformable>> children_;
+
+    bool inherits_rotation_;  // It either inherits rotation, scale, and position, or only scale and position
 };

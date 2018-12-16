@@ -49,9 +49,8 @@ glm::mat4 VRCamera::GetCurrentWorldToViewMatrix(vr::Hmd_Eye eye) {
 
 void VRCamera::SetCurrentPose(mat4 new_hmd_pose) {
     // printf("HMD Pose: %f, %f, %f\n", new_hmd_pose[3][0], new_hmd_pose[3][1], new_hmd_pose[3][2]);
-    vec3 pos = vec3((openvr_to_world * new_hmd_pose)[3]);
-    hmd_offset_->ResetAndSetTranslation(pos);
     // printf("HMD Offset: %f, %f, %f\n", pos.x, pos.y, pos.z);
+    hmd_offset_->Set(openvr_to_world * new_hmd_pose);
     current_pose_ = new_hmd_pose;
 }
 

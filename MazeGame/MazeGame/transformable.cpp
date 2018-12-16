@@ -1,7 +1,7 @@
 #include <memory>
 #include "transformable.h"
 
-Transformable::Transformable() {
+Transformable::Transformable(bool inherits_rotation) : inherits_rotation_(inherits_rotation) {
     children_ = std::unordered_set<std::shared_ptr<Transformable>>();
     parent_ = std::weak_ptr<Transformable>();
     local_transform_ = glm::mat4();
@@ -9,7 +9,7 @@ Transformable::Transformable() {
     Reset();
 }
 
-Transformable::Transformable(const glm::vec3& position) : Transformable() {
+Transformable::Transformable(const glm::vec3& position, bool inherits_rotation) : Transformable(inherits_rotation) {
     Translate(position);
 }
 
@@ -62,6 +62,10 @@ void Transformable::ResetAndSetTranslation(const glm::vec3& translation) {
 void Transformable::Set(const glm::mat4 new_local_transform) {
     local_transform_ = new_local_transform;
     RecalculateWorldTransform();
+}
+
+void Transformable::SetInheritsRotation(bool inherits_rotation) {
+    inherits_rotation_ = inherits_rotation;
 }
 
 void Transformable::AddChild(std::shared_ptr<Transformable> child) {
@@ -117,7 +121,13 @@ void Transformable::RecalculateWorldTransform() {
     if (parent_.expired()) {
         world_transform_ = local_transform_;
     } else {
-        world_transform_ = parent_.lock()->world_transform_ * local_transform_;
+        if (inherits_rotation_) {
+            world_transform_ = parent_.lock()->world_transform_ * local_transform_;
+        } else {
+            auto parent_transform = glm::translate(glm::mat4(), parent_.lock()->WorldPosition());
+            parent_transform = glm::scale(parent_transform, parent_.lock()->GetScale());
+            world_transform_ = parent_transform * local_transform_;
+        }
     }
     NotifyChildrenOfUpdate();
 }
@@ -166,4 +176,13 @@ glm::vec3 Transformable::WorldPosition() const {
 
 glm::vec3 Transformable::LocalPosition() const {
     return glm::vec3(local_transform_[3]);
+}
+
+glm::vec3 Transformable::GetScale() const {
+    glm::vec3 scale;
+    scale.x = glm::length(glm::vec3(world_transform_[0]));
+    scale.y = glm::length(glm::vec3(world_transform_[1]));
+    scale.z = glm::length(glm::vec3(world_transform_[2]));
+
+    return scale;
 }
