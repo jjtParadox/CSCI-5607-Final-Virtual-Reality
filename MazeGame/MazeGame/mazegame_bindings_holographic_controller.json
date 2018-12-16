@@ -1,0 +1,85 @@
+{
+   "alias_info" : {},
+   "app_key" : "system.generated.mazegame.exe",
+   "bindings" : {
+      "/actions/game" : {
+         "haptics" : [
+            {
+               "output" : "/actions/game/out/haptic_left",
+               "path" : "/user/hand/left/output/haptic"
+            },
+            {
+               "output" : "/actions/game/out/haptic_right",
+               "path" : "/user/hand/right/output/haptic"
+            }
+         ],
+         "poses" : [
+            {
+               "output" : "none",
+               "path" : "/user/hand/left/pose/base"
+            },
+            {
+               "output" : "/actions/game/in/hand_right",
+               "path" : "/user/hand/right/pose/tip"
+            },
+            {
+               "output" : "/actions/game/in/hand_left",
+               "path" : "/user/hand/left/pose/tip"
+            }
+         ],
+         "sources" : [
+            {
+               "inputs" : {},
+               "mode" : "none",
+               "path" : "/user/hand/left/input/skeleton/left"
+            },
+            {
+               "inputs" : {},
+               "mode" : "none",
+               "path" : "/user/hand/left/input/skeleton/left"
+            },
+            {
+               "inputs" : {
+                  "click" : {
+                     "output" : "/actions/game/in/grab_right"
+                  }
+               },
+               "mode" : "button",
+               "path" : "/user/hand/right/input/trigger"
+            },
+            {
+               "inputs" : {
+                  "click" : {
+                     "output" : "/actions/game/in/grab_left"
+                  }
+               },
+               "mode" : "button",
+               "path" : "/user/hand/left/input/trigger"
+            },
+            {
+               "inputs" : {
+                  "position" : {
+                     "output" : "/actions/game/in/movement"
+                  }
+               },
+               "mode" : "trackpad",
+               "path" : "/user/hand/right/input/trackpad"
+            },
+            {
+               "inputs" : {
+                  "position" : {
+                     "output" : "/actions/game/in/movement"
+                  }
+               },
+               "mode" : "trackpad",
+               "path" : "/user/hand/left/input/trackpad"
+            }
+         ]
+      }
+   },
+   "controller_type" : "holographic_controller",
+   "description" : "",
+   "name" : "My MazeGame.exe configuration for Windows MR Controller",
+   "options" : {},
+   "simulated_actions" : []
+}

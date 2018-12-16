@@ -3,8 +3,12 @@
          {
             "controller_type" : "vive_controller",
             "binding_url" : "mazegame_bindings_vive_controller.json"
+         },
+         {
+           "controller_type" : "holographic_controller",
+           "binding_url" : "mazegame_bindings_holographic_controller.json"
          }
-      ], 
+      ],
   "actions": [
     {
       "name": "/actions/game/in/Hand_Right",
