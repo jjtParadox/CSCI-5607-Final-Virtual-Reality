@@ -22,8 +22,8 @@ void ThreadSleep(unsigned long nMilliseconds) {
 }
 
 VRInputManager::VRInputManager(vr::IVRSystem* vr_system, VRCamera* vr_camera) : hands_{}, action_set_(0), vr_system_(vr_system) {
-    vr_camera->MakeChildOfWorldAnchor(hands_[Left].transform);
-    vr_camera->MakeChildOfWorldAnchor(hands_[Right].transform);
+    vr_camera->MakeChildOfTrackingCenter(hands_[Left].transform);
+    vr_camera->MakeChildOfTrackingCenter(hands_[Right].transform);
 }
 
 VRInputManager::VRInputManager() : hands_{}, action_set_(0), vr_system_(nullptr) {}

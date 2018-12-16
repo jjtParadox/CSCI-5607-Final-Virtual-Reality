@@ -39,7 +39,6 @@ const float KEY_ROTATION_SPEED = 0.005f;
 const float KEY_HEIGHT = 0.15f;
 const int KEY_DROP_PICKUP_COOLDOWN_MS = 3500;
 
-const glm::vec3 world_scale = glm::vec3(1.5, 1.5, 1.5);  // TODO: Remove this
 const glm::mat4 world_to_openvr_scale = glm::scale(glm::mat4(), glm::vec3(1.5, 1.5, 1.5));
 const glm::mat4 openvr_to_world_rotation = glm::rotate(glm::mat4(), (float)(M_PI / 2.0f), glm::vec3(1, 0, 0));
 const glm::mat4 openvr_to_world = openvr_to_world_rotation * glm::inverse(world_to_openvr_scale);

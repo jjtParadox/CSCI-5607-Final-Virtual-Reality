@@ -17,9 +17,9 @@ VRCamera::VRCamera(float near_clip, float far_clip, vr::IVRSystem* vr_system) : 
 
     vr_system_ = vr_system;
 
-    world_anchor_ = std::make_shared<Transformable>();
+    tracking_center_ = std::make_shared<Transformable>();
     hmd_offset_ = std::make_shared<Transformable>();
-    hmd_offset_->SetParent(world_anchor_);
+    hmd_offset_->SetParent(tracking_center_);
 }
 
 VRCamera::~VRCamera() {}
@@ -42,15 +42,14 @@ glm::mat4 VRCamera::GetCurrentWorldToViewMatrix(vr::Hmd_Eye eye) {
     matMVP = matMVP * glm::inverse(current_pose_);
     matMVP = matMVP * world_to_openvr;  // Rotate and scale world to convert to OpenVR coordinates
 
-    matMVP = matMVP * glm::inverse(world_anchor_->WorldTransform());  // Kind of an addition for world to camera
+    matMVP = matMVP * glm::inverse(tracking_center_->WorldTransform());  // Kind of an addition for world to camera
 
     return matMVP;
 }
 
 void VRCamera::SetCurrentPose(mat4 new_hmd_pose) {
     // printf("HMD Pose: %f, %f, %f\n", new_hmd_pose[3][0], new_hmd_pose[3][1], new_hmd_pose[3][2]);
-    vec3 pos = glm::rotate(vec3(new_hmd_pose[3]), (float)(M_PI / 2.0f), vec3(1, 0, 0));
-    pos /= world_scale;  // Convert from steamvr scale to world scale
+    vec3 pos = vec3((openvr_to_world * new_hmd_pose)[3]);
     hmd_offset_->ResetAndSetTranslation(pos);
     // printf("HMD Offset: %f, %f, %f\n", pos.x, pos.y, pos.z);
     current_pose_ = new_hmd_pose;
@@ -60,17 +59,17 @@ void VRCamera::MakeChildOfHeadset(std::shared_ptr<Transformable> child) {
     hmd_offset_->AddChild(child);
 }
 
-void VRCamera::MakeChildOfWorldAnchor(std::shared_ptr<Transformable> child) {
-    world_anchor_->AddChild(child);
+void VRCamera::MakeChildOfTrackingCenter(std::shared_ptr<Transformable> child) {
+    tracking_center_->AddChild(child);
 }
 
 void VRCamera::SetPosition(vec3 position) {
-    world_anchor_->ResetAndSetTranslation(position);
+    tracking_center_->ResetAndSetTranslation(position);
 }
 
 void VRCamera::Translate(float right, float absolute_up, float forward) {
     vec3 translation = right * HorizontalRight() + absolute_up * vec3(0, 0, 1) + forward * HorizontalForward();
-    world_anchor_->Translate(translation);
+    tracking_center_->Translate(translation);
 }
 
 vec3 VRCamera::GetNormalizedLookPosition() {

@@ -15,7 +15,7 @@ class VRCamera {
     void SetCurrentPose(glm::mat4 new_hmd_pose);
 
     void MakeChildOfHeadset(std::shared_ptr<Transformable> child);
-    void MakeChildOfWorldAnchor(std::shared_ptr<Transformable> child);
+    void MakeChildOfTrackingCenter(std::shared_ptr<Transformable> child);
     void SetPosition(glm::vec3 position);
     void Translate(float right, float absolute_up, float forward);
     glm::vec3 GetNormalizedLookPosition();
@@ -33,8 +33,8 @@ class VRCamera {
     glm::mat4 current_pose_;
 
     // world_anchor -> hmd_offset_ -> player
-    std::shared_ptr<Transformable> world_anchor_;  // Represents where, in game, the center of the playspace is
-    std::shared_ptr<Transformable> hmd_offset_;    // Represents where the HMD currently is in the world
+    std::shared_ptr<Transformable> tracking_center_;  // Represents where, in game, the center of the playspace is
+    std::shared_ptr<Transformable> hmd_offset_;       // Represents where the HMD currently is in the world
 
     float near_clip_, far_clip_;
     vr::IVRSystem* vr_system_;
