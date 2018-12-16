@@ -22,15 +22,10 @@ void Key::Update() {
         holder_ = nullptr;
     }
 
-    if (holder_ == nullptr) {
-        transform->Rotate(KEY_ROTATION_SPEED, glm::vec3(0, 1, 0));
-
-        int time = SDL_GetTicks();
-        transform->Translate(0, cos(time / 700.0f) / 1000, 0);
+    if (holder_ != nullptr) {
+        InitBoundingBox(bounding_box_vertices_);
+        bounding_box_->transform->ClearParent();
     }
-
-    InitBoundingBox(bounding_box_vertices_);
-    bounding_box_->transform->ClearParent();
 
     GameObject::Update();
 }
@@ -59,4 +54,7 @@ void Key::InitTransform() {
     transform->ClearParent();
     transform->ResetAndSetTranslation(glm::vec3(previous_pos, KEY_HEIGHT));
     transform->Rotate(M_PI / 2, glm::vec3(1, 0, 0));
+
+    InitBoundingBox(bounding_box_vertices_);
+    bounding_box_->transform->ClearParent();
 }

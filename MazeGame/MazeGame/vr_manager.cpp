@@ -202,6 +202,8 @@ void VRManager::RunMainLoop() {
     SDL_ShowCursor(SDL_DISABLE);
 
     SDL_Event windowEvent;
+    double lastTime = SDL_GetTicks();
+    int nbFrames = 0;
     while (!quit) {
         while (SDL_PollEvent(&windowEvent)) {  // inspect all events in the queue
             if (windowEvent.type == SDL_QUIT) quit = true;
@@ -229,6 +231,15 @@ void VRManager::RunMainLoop() {
                     SDL_SetRelativeMouseMode(SDL_TRUE);
                     break;
             }
+        }
+
+        double currentTime = SDL_GetTicks();
+        nbFrames++;
+        if (currentTime - lastTime >= 1000) {  // If last printf() was more than 1 sec ago
+            // printf and reset timer
+            printf("%f ms/frame\n", 1000.0 / double(nbFrames));
+            nbFrames = 0;
+            lastTime += 1000;
         }
 
         vr_input_manager_.HandleInput();
