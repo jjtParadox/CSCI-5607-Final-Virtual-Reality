@@ -11,9 +11,17 @@ out vec4 outColor;
 uniform sampler2D tex0;
 uniform sampler2D tex1;
 
+// Fractal ramp
+uniform sampler2D fractal;
+
 uniform int texID;
 
 const float ambient = .25;
+
+// Fractal parameters
+const int iter = 150;
+const float scale = 2;
+
 void main() {
   vec3 color;
   if (texID == -1)
@@ -21,7 +29,27 @@ void main() {
   else if (texID == 0)
     color = texture(tex0, texcoord).rgb;
   else if (texID == 1)
-    color = texture(tex1, texcoord).rgb;  
+    color = texture(tex1, texcoord).rgb;
+  else if (texID == 2) {
+    // http://nuclear.mutantstargoat.com/articles/sdr_fract/
+    vec2 z, c;
+
+    c.x = 1.3333 * (texcoord.x - 0.5) * scale;
+    c.y = (texcoord.y - 0.5) * scale;
+
+    int i;
+    z = c;
+    for(i=0; i<iter; i++) {
+      float x = (z.x * z.x - z.y * z.y) + c.x;
+      float y = (z.y * z.x + z.x * z.y) + c.y;
+
+      if((x * x + y * y) > 4.0) break;
+      z.x = x;
+      z.y = y;
+    }
+    float ramp = (float(i)/100);
+    color = texture(fractal, vec2(ramp,0.5)).rgb;
+  }
   else{
     outColor = vec4(1,0,0,1);
     return; //This was an error, stop lighting!

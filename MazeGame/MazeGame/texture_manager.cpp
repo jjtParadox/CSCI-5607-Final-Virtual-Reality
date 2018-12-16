@@ -10,6 +10,9 @@ void TextureManager::InitTextures() {
 
     // Allocate Texture 1
     InitTexture(&tex1, "stone_floor.bmp");
+
+    // Allocate fractal ramp
+    InitTexture(&fractal, "fractal.bmp");
 }
 
 void TextureManager::Update() {
@@ -20,6 +23,10 @@ void TextureManager::Update() {
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, tex1);
     glUniform1i(glGetUniformLocation(ShaderManager::Textured_Shader, "tex1"), 1);
+
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, fractal);
+    glUniform1i(glGetUniformLocation(ShaderManager::Textured_Shader, "fractal"), 2);
 }
 
 void TextureManager::InitTexture(GLuint* tex_location, const char* file) {
@@ -48,3 +55,4 @@ void TextureManager::InitTexture(GLuint* tex_location, const char* file) {
 
 GLuint TextureManager::tex0;
 GLuint TextureManager::tex1;
+GLuint TextureManager::fractal;
