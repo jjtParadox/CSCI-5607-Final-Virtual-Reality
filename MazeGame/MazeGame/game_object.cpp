@@ -34,6 +34,7 @@ void GameObject::SetTextureIndex(TEXTURE texture_index) {
 
 void GameObject::Update() {
     glUseProgram(ShaderManager::Textured_Shader);
+    // glBindVertexArray(model_->model_vao_);
     if (model_ == nullptr) {
         printf("GameObject must be given a valid model before calling Update()\n");
         exit(1);
@@ -47,6 +48,7 @@ void GameObject::Update() {
     }
 
     glDrawArrays(GL_TRIANGLES, model_->vbo_vertex_start_index_, model_->NumVerts());
+    // glBindVertexArray(0);
     glUseProgram(0);
 
     bounding_box_->Render();

@@ -16,22 +16,33 @@ Controller::Controller() {
 }
 
 void Controller::Render(const glm::mat4& worldViewMatrix) const {
-    if (!show_controller || !render_model) return;
+    if (!show_controller || !render_model) {
+        return;
+    }
 
     glUseProgram(ShaderManager::RenderModel_Shader);
     const glm::mat4& matDeviceToTracking = transform->WorldTransform();
     glm::mat4 matMVP = worldViewMatrix * matDeviceToTracking;
     glUniformMatrix4fv(glGetUniformLocation(ShaderManager::RenderModel_Shader, "matrix"), 1, GL_FALSE, glm::value_ptr(matMVP));
 
-    bounding_box_->Render();
-    glUseProgram(0);
-
     render_model->Draw();
+    bounding_box_->Render();
 }
 
-void Controller::UpdatePose() {
-    show_controller = true;
+void Controller::HandleInput() {
+    // Check for grab action
+    vr::InputDigitalActionData_t action_data;
+    if (VRInputManager::GetDigitalActionDataEdge(action_grab, action_data)) {
+        if (action_data.bState) {  // Just grabbed
+            printf("Grabbed!\n");
+            Grab();
+        } else {  // Just ungrabbed
+            printf("Ungrabbed!\n");
+            Ungrab();
+        }
+    }
 
+    // Update pose
     vr::InputPoseActionData_t poseData;
     if (vr::VRInput()->GetPoseActionData(action_pose, vr::TrackingUniverseStanding, 0, &poseData, sizeof(poseData),
                                          vr::k_ulInvalidInputValueHandle) != vr::VRInputError_None ||
@@ -50,18 +61,26 @@ void Controller::UpdatePose() {
                 render_model = input_manager->FindOrLoadRenderModel(sRenderModelName.c_str());
                 render_model_name = sRenderModelName;
             }
+
+            if (held_key_ == nullptr) {
+                show_controller = true;
+            } else {
+                show_controller = false;
+            }
         }
     }
 }
 
 void Controller::Grab() {
     Key* key = input_manager->map_->FirstIntersectedKey(*bounding_box_);
-    if (key != nullptr && held_key_ == nullptr && key->CanBePickedUp()) {
+    if (key != nullptr && held_key_ == nullptr) {
         held_key_ = key;
         held_key_->SetHolder(this);
 
         held_key_->transform->ResetAndSetTranslation(glm::vec3(0));
         held_key_->transform->Rotate(M_PI / 2, glm::vec3(1, 0, 0));
+        held_key_->transform->Rotate(M_PI / 2, glm::vec3(0, 1, 0));
+        held_key_->transform->Translate(glm::vec3(-0.01, -0.15, 0));
         held_key_->transform->SetParent(transform);
     }
 }

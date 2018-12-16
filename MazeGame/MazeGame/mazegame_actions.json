@@ -23,7 +23,11 @@
       "type": "vibration"
     },
 	{
-	  "name": "/actions/game/in/grab",
+	  "name": "/actions/game/in/grab_left",
+	  "type": "boolean"
+	},
+	{
+	  "name": "/actions/game/in/grab_right",
 	  "type": "boolean"
 	}
   ],
@@ -34,7 +38,8 @@
             "/actions/game/in/Hand_Left" : "Left Hand Pose",
             "/actions/game/out/haptic_left" : "Left Haptic Feedback",
             "/actions/game/out/haptic_right" : "Right Haptic Feedback",
-			"/actions/game/in/grab" : "Grab Objects"
+			"/actions/game/in/grab_left" : "Left Hand Grab",
+			"/actions/game/in/grab_right" : "Right Hand Grab"
         }
     ]
 }

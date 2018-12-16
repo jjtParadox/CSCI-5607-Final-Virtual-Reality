@@ -2,10 +2,11 @@
 #include <detail/type_vec4.hpp>
 #include <string>
 #include <vector>
+#include "glad.h"
 
 class Model {
    public:
-    explicit Model(const std::string& file);
+    Model(const std::string& file, GLuint vao);
 
     void LoadTxt(const std::string& file);
     void LoadObj(const std::string& file);
@@ -17,6 +18,7 @@ class Model {
 
     float* model_;
     int vbo_vertex_start_index_;
+    GLuint model_vao_;
 
    private:
     int num_verts_;

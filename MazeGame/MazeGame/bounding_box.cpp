@@ -84,6 +84,7 @@ void BoundingBox::Render() const {
     vec3 color = vec3(1, 0, 0);
 
     glUseProgram(ShaderManager::Textured_Shader);
+    glBindVertexArray(debug_render_model->model_vao_);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     glm::mat4 model_matrix;
@@ -105,6 +106,7 @@ void BoundingBox::Render() const {
     glDrawArrays(GL_TRIANGLES, debug_render_model->vbo_vertex_start_index_, debug_render_model->NumVerts());
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    // glBindVertexArray(0);
     glUseProgram(0);
 }
 

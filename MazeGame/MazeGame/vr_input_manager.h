@@ -32,7 +32,6 @@ class VRInputManager {
 
     Controller hands_[2];
     vr::VRActionSetHandle_t action_set_ = vr::k_ulInvalidActionSetHandle;
-    vr::VRActionHandle_t action_grab = vr::k_ulInvalidActionHandle;
     vr::IVRSystem *vr_system_;
     std::vector<RenderModel *> render_models_;
 };

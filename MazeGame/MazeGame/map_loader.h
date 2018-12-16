@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include "game_object.h"
+#include "glad.h"
 #include "map.h"
 #include "material.h"
 #include "model.h"
@@ -10,11 +11,11 @@ class MapLoader {
     MapLoader();
     ~MapLoader();
 
-    Map* LoadMap(const std::string& filename);
+    Map* LoadMap(const std::string& filename, GLuint scene_vao);
 
    private:
     static Material GetMaterialForCharacter(char c);
-    void LoadAssets();
+    void LoadAssets(GLuint scene_vao);
     GameObject* GetGround(glm::vec3 base_position) const;
 
     static glm::vec3 GetPositionForCoordinate(int i, int j);

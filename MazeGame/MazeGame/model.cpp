@@ -11,7 +11,7 @@
 using std::string;
 using std::vector;
 
-Model::Model(const string& file) {
+Model::Model(const string& file, GLuint vao) {
     unsigned int dot_position = file.find_last_of('.');
     if (dot_position == string::npos) {
         printf("Given file \"%s\" did not have an extension. Exiting...\n", file.c_str());
@@ -28,6 +28,7 @@ Model::Model(const string& file) {
         exit(1);
     }
 
+    model_vao_ = vao;
     ModelManager::RegisterModel(this);
 }
 

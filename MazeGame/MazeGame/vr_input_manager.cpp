@@ -39,15 +39,15 @@ void VRInputManager::Init() {
     std::string action_manifest_string(action_manifest_path.string());
     vr::EVRInputError error = vr::VRInput()->SetActionManifestPath(action_manifest_string.c_str());
 
-    vr::VRInput()->GetActionHandle("/actions/game/in/grab", &action_grab);
-
     vr::VRInput()->GetActionHandle("/actions/game/out/Haptic_Left", &hands_[Left].action_haptic);
     vr::VRInput()->GetInputSourceHandle("/user/hand/left", &hands_[Left].source);
     vr::VRInput()->GetActionHandle("/actions/game/in/Hand_Left", &hands_[Left].action_pose);
+    vr::VRInput()->GetActionHandle("/actions/game/in/grab_left", &hands_[Left].action_grab);
 
     vr::VRInput()->GetActionHandle("/actions/game/out/Haptic_Right", &hands_[Right].action_haptic);
     vr::VRInput()->GetInputSourceHandle("/user/hand/right", &hands_[Right].source);
     vr::VRInput()->GetActionHandle("/actions/game/in/Hand_Right", &hands_[Right].action_pose);
+    vr::VRInput()->GetActionHandle("/actions/game/in/grab_right", &hands_[Right].action_grab);
 
     vr::VRInput()->GetActionSetHandle("/actions/game", &action_set_);
 
@@ -75,29 +75,9 @@ bool VRInputManager::HandleInput() {
     actionSet.ulActionSet = action_set_;
     vr::VRInput()->UpdateActionState(&actionSet, sizeof(actionSet), 1);
 
-    vr::InputDigitalActionData_t action_data;
-    vr::VRInputValueHandle_t origin;
-    if (GetDigitalActionDataEdge(action_grab, action_data, &origin)) {
-        Controller* source_controller = nullptr;
-        if (origin == hands_[Left].source) {
-            source_controller = &hands_[Left];
-        } else if (origin == hands_[Right].source) {
-            source_controller = &hands_[Right];
-        }
-
-        if (source_controller != nullptr) {
-            if (action_data.bState) {  // Just grabbed
-                // printf("Grabbed!\n");
-                source_controller->Grab();
-            } else {  // Just ungrabbed
-                // printf("Ungrabbed!\n");
-                source_controller->Ungrab();
-            }
-        }
-    }
-
+    // Tell each hand to handle its own input
     for (Hand eHand = Left; eHand <= Right; ((int&)eHand)++) {
-        hands_[eHand].UpdatePose();
+        hands_[eHand].HandleInput();
     }
 
     return false;

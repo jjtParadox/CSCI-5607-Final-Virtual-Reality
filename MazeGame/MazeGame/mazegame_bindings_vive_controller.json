@@ -41,11 +41,20 @@
             {
                "inputs" : {
                   "click" : {
-                     "output" : "/actions/game/in/grab"
+                     "output" : "/actions/game/in/grab_right"
                   }
                },
                "mode" : "button",
                "path" : "/user/hand/right/input/trigger"
+            },
+            {
+               "inputs" : {
+                  "click" : {
+                     "output" : "/actions/game/in/grab_left"
+                  }
+               },
+               "mode" : "button",
+               "path" : "/user/hand/left/input/trigger"
             }
          ]
       }

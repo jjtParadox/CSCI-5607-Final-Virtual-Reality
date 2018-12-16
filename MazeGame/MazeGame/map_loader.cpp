@@ -16,13 +16,13 @@ using std::cout;
 using std::endl;
 using std::string;
 
-MapLoader::MapLoader() {
-    LoadAssets();
-}
+MapLoader::MapLoader() {}
 
 MapLoader::~MapLoader() {}
 
-Map* MapLoader::LoadMap(const string& filename) {
+Map* MapLoader::LoadMap(const string& filename, GLuint scene_vao) {
+    LoadAssets(scene_vao);
+
     int width, height;
     Map* map = new Map();
 
@@ -144,14 +144,14 @@ Material MapLoader::GetMaterialForCharacter(char c) {
     }
 }
 
-void MapLoader::LoadAssets() {
-    wall_model_ = new Model("models/cube.txt");
+void MapLoader::LoadAssets(GLuint scene_vao) {
+    wall_model_ = new Model("models/cube.txt", scene_vao);
     BoundingBox::debug_render_model = wall_model_;
 
-    door_model_ = new Model("models/knot.txt");
-    key_model_ = new Model("models/mjolnir.obj");
-    start_model_ = new Model("models/sphere.txt");
-    goal_model_ = new Model("models/goal_crystal.obj");
+    door_model_ = new Model("models/knot.txt", scene_vao);
+    key_model_ = new Model("models/mjolnir.obj", scene_vao);
+    start_model_ = new Model("models/sphere.txt", scene_vao);
+    goal_model_ = new Model("models/goal_crystal.obj", scene_vao);
 }
 
 GameObject* MapLoader::GetGround(glm::vec3 base_position) const {

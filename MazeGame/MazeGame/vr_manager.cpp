@@ -271,16 +271,16 @@ void VRManager::RenderFrame() {
 }
 
 void VRManager::SetupScene() {
+    glGenVertexArrays(1, &m_unSceneVAO);  // Create a VAO
+    glBindVertexArray(m_unSceneVAO);      // Bind the above created VAO to the current context
+
     std::string map_file = "map1.txt";
-    map = map_loader.LoadMap(map_file);
+    map = map_loader.LoadMap(map_file, m_unSceneVAO);
     player = new Player(vr_camera_, map);
     map->Add(player);
     vr_input_manager_.map_ = map;
 
     TextureManager::InitTextures();
-
-    glGenVertexArrays(1, &m_unSceneVAO);  // Create a VAO
-    glBindVertexArray(m_unSceneVAO);      // Bind the above created VAO to the current context
 
     ModelManager::InitVBO();
 
