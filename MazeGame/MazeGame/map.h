@@ -2,6 +2,7 @@
 #include <detail/type_vec3.hpp>
 #include <vector>
 #include "door.h"
+#include "fractal.h"
 #include "game_object.h"
 #include "goal.h"
 #include "key.h"
@@ -26,6 +27,8 @@ class Map {
 
     glm::vec3 SpawnPosition() const;
     glm::vec3 GoalPosition() const;
+
+    Fractal* fractal_;
 
    private:
     std::vector<GameObject*> all_elements_;

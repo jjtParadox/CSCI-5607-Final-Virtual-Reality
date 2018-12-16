@@ -42,6 +42,10 @@ void Controller::HandleInput() {
         }
     }
 
+    if (action_data.bState && input_manager->map_->fractal_->holder_ != nullptr && input_manager->map_->fractal_->holder_ != this) {
+        input_manager->map_->fractal_->transform->Scale(glm::vec3(1.01,1,1.01));
+    }
+
     // Update pose
     vr::InputPoseActionData_t poseData;
     if (vr::VRInput()->GetPoseActionData(action_pose, vr::TrackingUniverseStanding, 0, &poseData, sizeof(poseData),
@@ -82,10 +86,26 @@ void Controller::Grab() {
         held_key_->transform->Rotate(M_PI / 2, glm::vec3(0, 1, 0));
         held_key_->transform->Translate(glm::vec3(-0.01, -0.15, 0));
         held_key_->transform->SetParent(transform);
+    } else {
+        Fractal* fractal = input_manager->map_->fractal_;
+        if (fractal->IntersectsWith(*bounding_box_) && fractal->holder_ == nullptr) {
+            fractal->holder_ = this;
+            fractal->transform->ResetAndSetTranslation(glm::vec3(0,0,-0.2));
+            fractal->transform->Scale(0.3f);
+            fractal->transform->SetParent(transform);
+        }
     }
 }
 
 void Controller::Ungrab() {
+    if (input_manager->map_->fractal_->holder_ == this) {
+        Fractal* fractal = input_manager->map_->fractal_;
+        glm::vec3 previous_pos = glm::vec3(fractal->transform->X(), fractal->transform->Y(), fractal->transform->Z());
+        fractal->transform->ClearParent();
+        fractal->transform->ResetAndSetTranslation(previous_pos);
+        fractal->transform->Scale(0.3f);
+        fractal->holder_ = nullptr;
+    }
     if (held_key_ == nullptr) return;
 
     held_key_->Drop();

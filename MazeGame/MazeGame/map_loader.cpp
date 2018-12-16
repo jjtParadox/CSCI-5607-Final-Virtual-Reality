@@ -6,6 +6,7 @@
 #include <iostream>
 #include <string>
 #include "constants.h"
+#include "fractal.h"
 #include "goal.h"
 #include "map.h"
 #include "map_loader.h"
@@ -91,6 +92,13 @@ Map* MapLoader::LoadMap(const string& filename, GLuint scene_vao) {
                         current_object = new Goal(goal_model_, map);
                         current_object->transform->Translate(base_position);
                         current_object->transform->Rotate(0.1, glm::vec3(0, 0, 1));
+                        add_ground = true;
+                        break;
+                    case 'F':
+                        current_object = new Fractal(wall_model_);
+                        current_object->transform->Translate(base_position.x, base_position.y, 0.3);
+                        current_object->transform->Scale(0.3f);
+                        current_object->SetTextureIndex(FRACTAL);
                         add_ground = true;
                         break;
                     case '0':

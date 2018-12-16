@@ -23,6 +23,8 @@ void Map::Add(GameObject* object) {
         spawn_ = dynamic_cast<Spawn*>(object);
     } else if (dynamic_cast<Goal*>(object)) {
         goal_ = dynamic_cast<Goal*>(object);
+    } else if (dynamic_cast<Fractal*>(object)) {
+        fractal_ = dynamic_cast<Fractal*>(object);
     }
 
     all_elements_.push_back(object);

@@ -20,7 +20,7 @@ const float ambient = .25;
 
 // Fractal parameters
 const int iter = 150;
-const float scale = 2;
+const float scale = 3;
 
 void main() {
   vec3 color;
@@ -34,7 +34,7 @@ void main() {
     // http://nuclear.mutantstargoat.com/articles/sdr_fract/
     vec2 z, c;
 
-    c.x = 1.3333 * (texcoord.x - 0.5) * scale;
+    c.x = (texcoord.x - 0.5) * scale - 0.777;
     c.y = (texcoord.y - 0.5) * scale;
 
     int i;
