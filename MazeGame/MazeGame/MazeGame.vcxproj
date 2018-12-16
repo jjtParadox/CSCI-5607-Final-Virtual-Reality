@@ -161,6 +161,7 @@
   <ItemGroup>
     <ClCompile Include="bounding_box.cpp" />
     <ClCompile Include="camera.cpp" />
+    <ClCompile Include="controller.cpp" />
     <ClCompile Include="door.cpp" />
     <ClCompile Include="game_object.cpp" />
     <ClCompile Include="glad.c" />
@@ -188,6 +189,7 @@
     <ClInclude Include="bounding_box.h" />
     <ClInclude Include="camera.h" />
     <ClInclude Include="constants.h" />
+    <ClInclude Include="controller.h" />
     <ClInclude Include="door.h" />
     <ClInclude Include="game_object.h" />
     <ClInclude Include="glad.h" />

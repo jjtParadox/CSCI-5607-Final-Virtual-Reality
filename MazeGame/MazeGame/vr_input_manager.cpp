@@ -21,7 +21,8 @@ void ThreadSleep(unsigned long nMilliseconds) {
 #endif
 }
 
-VRInputManager::VRInputManager(vr::IVRSystem* vr_system, VRCamera* vr_camera) : hands_{}, action_set_(0), vr_system_(vr_system) {
+VRInputManager::VRInputManager(vr::IVRSystem* vr_system, VRCamera* vr_camera) : VRInputManager() {
+    vr_system_ = vr_system;
     vr_camera->MakeChildOfTrackingCenter(hands_[Left].transform);
     vr_camera->MakeChildOfTrackingCenter(hands_[Right].transform);
 }
@@ -47,6 +48,10 @@ void VRInputManager::Init() {
     vr::VRInput()->GetActionHandle("/actions/game/in/Hand_Right", &hands_[Right].action_pose);
 
     vr::VRInput()->GetActionSetHandle("/actions/game", &action_set_);
+
+    for (Controller& controller : hands_) {
+        controller.input_manager = this;
+    }
 }
 
 bool VRInputManager::HandleInput() {
@@ -68,48 +73,18 @@ bool VRInputManager::HandleInput() {
     actionSet.ulActionSet = action_set_;
     vr::VRInput()->UpdateActionState(&actionSet, sizeof(actionSet), 1);
 
-    hands_[Left].show_controller = true;
-    hands_[Right].show_controller = true;
-
     for (Hand eHand = Left; eHand <= Right; ((int&)eHand)++) {
-        ControllerInfo_t* current_hand = &hands_[eHand];
-        vr::InputPoseActionData_t poseData;
-        if (vr::VRInput()->GetPoseActionData(current_hand->action_pose, vr::TrackingUniverseStanding, 0, &poseData, sizeof(poseData),
-                                             vr::k_ulInvalidInputValueHandle) != vr::VRInputError_None ||
-            !poseData.bActive || !poseData.pose.bPoseIsValid) {
-            current_hand->show_controller = false;
-        } else {
-            current_hand->raw_pose = VRManager::ConvertSteamVRMatrixToMat4(poseData.pose.mDeviceToAbsoluteTracking);
-            current_hand->transform->Set(openvr_to_world * current_hand->raw_pose);
-
-            vr::InputOriginInfo_t originInfo;
-            if (vr::VRInput()->GetOriginTrackedDeviceInfo(poseData.activeOrigin, &originInfo, sizeof(originInfo)) ==
-                    vr::VRInputError_None &&
-                originInfo.trackedDeviceIndex != vr::k_unTrackedDeviceIndexInvalid) {
-                std::string sRenderModelName =
-                    VRManager::GetTrackedDeviceString(originInfo.trackedDeviceIndex, vr::Prop_RenderModelName_String);
-                if (sRenderModelName != current_hand->render_model_name) {
-                    current_hand->render_model = FindOrLoadRenderModel(sRenderModelName.c_str());
-                    current_hand->render_model_name = sRenderModelName;
-                }
-            }
-        }
+        hands_[eHand].UpdatePose();
     }
 
     return false;
 }
 
-void VRInputManager::RenderControllers(glm::mat4 worldViewMatrix) const {
+void VRInputManager::RenderControllers(const glm::mat4& worldViewMatrix) const {
     glUseProgram(ShaderManager::RenderModel_Shader);
 
     for (Hand eHand = Left; eHand <= Right; ((int&)eHand)++) {
-        if (!hands_[eHand].show_controller || !hands_[eHand].render_model) continue;
-
-        const glm::mat4& matDeviceToTracking = hands_[eHand].transform->WorldTransform();
-        glm::mat4 matMVP = worldViewMatrix * matDeviceToTracking;
-        glUniformMatrix4fv(glGetUniformLocation(ShaderManager::RenderModel_Shader, "matrix"), 1, GL_FALSE, glm::value_ptr(matMVP));
-
-        hands_[eHand].render_model->Draw();
+        hands_[eHand].Render(worldViewMatrix);
 
         /*printf("Rendermodel at location %f, %f, %f\n", hands_[eHand].pose[3][0], hands_[eHand].pose[3][1],
                hands_[eHand].pose[3][2]);*/
@@ -120,9 +95,10 @@ void VRInputManager::RenderControllers(glm::mat4 worldViewMatrix) const {
 
 RenderModel* VRInputManager::FindOrLoadRenderModel(const char* render_model_name) {
     RenderModel* pRenderModel = NULL;
-    for (std::vector<RenderModel*>::iterator i = render_models_.begin(); i != render_models_.end(); i++) {
-        if (!_stricmp((*i)->GetName().c_str(), render_model_name)) {
-            pRenderModel = *i;
+    // for (std::vector<RenderModel*>::iterator i = render_models_.begin(); i != render_models_.end(); i++) {
+    for (RenderModel* i : render_models_) {
+        if (!_stricmp(i->GetName().c_str(), render_model_name)) {
+            pRenderModel = i;
             break;
         }
     }
