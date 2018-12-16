@@ -28,8 +28,8 @@ class GameObject : public Updatable {
     std::shared_ptr<Transformable> transform;
 
    protected:
-    void InitBoundingBox(const std::vector<glm::vec4>& vertices);
-    glm::vec4 ToWorldSpace(const glm::vec4& model_coordinate) const;
+    void InitBoundingBox(const std::vector<glm::vec3>& vertices);
+    glm::vec3 ToWorldSpace(const glm::vec3& model_coordinate) const;
 
     std::shared_ptr<BoundingBox> bounding_box_;
     Model* model_;

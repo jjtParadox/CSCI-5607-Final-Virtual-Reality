@@ -21,15 +21,15 @@ Player::Player(VRCamera* camera, Map* map) : GameObject() {
     }
 
     float num = 0.15f;
-    box_ = std::vector<glm::vec4>(8);
-    box_[0] = glm::vec4(-num, -num, -PLAYER_HALF_HEIGHT, 1);
-    box_[1] = glm::vec4(num, -num, -PLAYER_HALF_HEIGHT, 1);
-    box_[2] = glm::vec4(num, num, -PLAYER_HALF_HEIGHT, 1);
-    box_[3] = glm::vec4(-num, num, -PLAYER_HALF_HEIGHT, 1);
-    box_[4] = glm::vec4(-num, -num, PLAYER_HALF_HEIGHT, 1);
-    box_[5] = glm::vec4(num, -num, PLAYER_HALF_HEIGHT, 1);
-    box_[6] = glm::vec4(num, num, PLAYER_HALF_HEIGHT, 1);
-    box_[7] = glm::vec4(-num, num, PLAYER_HALF_HEIGHT, 1);
+    box_ = std::vector<glm::vec3>(8);
+    box_[0] = glm::vec3(-num, -num, -PLAYER_HALF_HEIGHT);
+    box_[1] = glm::vec3(num, -num, -PLAYER_HALF_HEIGHT);
+    box_[2] = glm::vec3(num, num, -PLAYER_HALF_HEIGHT);
+    box_[3] = glm::vec3(-num, num, -PLAYER_HALF_HEIGHT);
+    box_[4] = glm::vec3(-num, -num, PLAYER_HALF_HEIGHT);
+    box_[5] = glm::vec3(num, -num, PLAYER_HALF_HEIGHT);
+    box_[6] = glm::vec3(num, num, PLAYER_HALF_HEIGHT);
+    box_[7] = glm::vec3(-num, num, PLAYER_HALF_HEIGHT);
 
     glm::vec3 start_position = map_->SpawnPosition();
     camera->SetPosition(start_position);

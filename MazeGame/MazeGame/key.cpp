@@ -8,6 +8,7 @@
 Key::Key(Model* model, Map* map, char id, glm::vec2 pos) : GameObject(model, map) {
     id_ = id;
 
+    bounding_box_vertices_ = bounding_box_->GetBoxVertices();  // This has to happen before we translate the key
     transform->Translate(glm::vec3(pos.x, pos.y, 0));
     InitTransform();
 }
@@ -27,6 +28,9 @@ void Key::Update() {
         int time = SDL_GetTicks();
         transform->Translate(0, cos(time / 700.0f) / 1000, 0);
     }
+
+    InitBoundingBox(bounding_box_vertices_);
+    bounding_box_->transform->ClearParent();
 
     GameObject::Update();
 }

@@ -21,4 +21,5 @@ class Key : public GameObject {
     char id_;
     Controller* holder_;
     int drop_time_ = 0;
+    std::vector<glm::vec3> bounding_box_vertices_;
 };

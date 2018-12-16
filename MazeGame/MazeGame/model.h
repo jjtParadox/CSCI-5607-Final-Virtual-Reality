@@ -13,7 +13,7 @@ class Model {
     int NumElements() const;
     int NumVerts() const;
 
-    std::vector<glm::vec4> Vertices() const;
+    std::vector<glm::vec3> Vertices() const;
 
     float* model_;
     int vbo_vertex_start_index_;

@@ -16,6 +16,7 @@ class BoundingBox {
 
     void ExpandToBound(const BoundingBox& other);
     void ExpandToBound(const std::vector<BoundingBox> bounding_boxes);
+    std::vector<glm::vec3> GetBoxVertices();
 
     bool ContainsOrIntersects(const BoundingBox& other) const;
     void Render() const;  // Renders the bounding box in as a wireframe

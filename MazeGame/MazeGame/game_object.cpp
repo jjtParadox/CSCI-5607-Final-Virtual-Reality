@@ -60,8 +60,8 @@ bool GameObject::IntersectsWith(const BoundingBox& other) const {
     return bounding_box_->ContainsOrIntersects(other);
 }
 
-void GameObject::InitBoundingBox(const std::vector<glm::vec4>& vertices) {
-    std::vector<glm::vec4> world_space_vertices;    // We want the verts in world space
+void GameObject::InitBoundingBox(const std::vector<glm::vec3>& vertices) {
+    std::vector<glm::vec3> world_space_vertices;    // We want the verts in world space
     world_space_vertices.reserve(vertices.size());  // Preallocate for efficiency
     for (const auto& vertex : vertices) {           // Convert them one by one
         world_space_vertices.push_back(ToWorldSpace(vertex));
@@ -71,6 +71,6 @@ void GameObject::InitBoundingBox(const std::vector<glm::vec4>& vertices) {
     bounding_box_->transform->SetParent(transform);
 }
 
-glm::vec4 GameObject::ToWorldSpace(const glm::vec4& model_coordinate) const {
-    return transform->WorldTransform() * model_coordinate;
+glm::vec3 GameObject::ToWorldSpace(const glm::vec3& model_coordinate) const {
+    return glm::vec3(transform->WorldTransform() * glm::vec4(model_coordinate, 1.0));
 }

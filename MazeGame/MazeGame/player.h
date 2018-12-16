@@ -14,7 +14,7 @@ class Player : public GameObject {
     void RegenerateBoundingBox();
 
     VRCamera* camera_;
-    std::vector<glm::vec4> box_;
+    std::vector<glm::vec3> box_;
     Key* held_key_;
 
     float vertical_velocity = 0.0f, forward_velocity = 0.0f, right_velocity = 0.0f;
