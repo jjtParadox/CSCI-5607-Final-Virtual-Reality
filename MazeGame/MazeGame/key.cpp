@@ -1,9 +1,9 @@
 #include <SDL.h>
 #include <cmath>
 #include "constants.h"
+#include "controller.h"
 #include "key.h"
 #include "map.h"
-#include "player.h"
 
 Key::Key(Model* model, Map* map, char id, glm::vec2 pos) : GameObject(model, map) {
     id_ = id;
@@ -36,7 +36,7 @@ void Key::GoAway() {
     transform->ResetAndSetTranslation(glm::vec3(0, 0, -3));
 }
 
-void Key::SetHolder(Player* player) {
+void Key::SetHolder(Controller* player) {
     holder_ = player;
 }
 

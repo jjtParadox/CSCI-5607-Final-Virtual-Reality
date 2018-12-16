@@ -52,9 +52,9 @@ Player* Map::IntersectsPlayer(GameObject* object) {
     return nullptr;
 }
 
-Key* Map::FirstIntersectedKey(GameObject* object) {
+Key* Map::FirstIntersectedKey(const BoundingBox& object) {
     for (auto key : keys_) {
-        if (key->IntersectsWith(*object)) return key;
+        if (key->IntersectsWith(object)) return key;
     }
 
     return nullptr;

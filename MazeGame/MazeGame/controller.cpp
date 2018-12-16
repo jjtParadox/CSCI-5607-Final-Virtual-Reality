@@ -5,12 +5,26 @@
 #include "vr_input_manager.h"
 #include "vr_manager.h"
 
+Controller::Controller() {
+    glm::vec3 tip_pos = transform->WorldPosition();
+    glm::vec3 lower = tip_pos - CONTROLLER_TIP_COLLIDER_HALF_DIAGONAL;
+    glm::vec3 upper = tip_pos + CONTROLLER_TIP_COLLIDER_HALF_DIAGONAL;
+    std::vector<glm::vec3> points = {lower, upper};
+
+    bounding_box_ = std::make_shared<BoundingBox>(points);
+    bounding_box_->transform->SetParent(transform);
+}
+
 void Controller::Render(const glm::mat4& worldViewMatrix) const {
     if (!show_controller || !render_model) return;
 
+    glUseProgram(ShaderManager::RenderModel_Shader);
     const glm::mat4& matDeviceToTracking = transform->WorldTransform();
     glm::mat4 matMVP = worldViewMatrix * matDeviceToTracking;
     glUniformMatrix4fv(glGetUniformLocation(ShaderManager::RenderModel_Shader, "matrix"), 1, GL_FALSE, glm::value_ptr(matMVP));
+
+    bounding_box_->Render();
+    glUseProgram(0);
 
     render_model->Draw();
 }
@@ -38,4 +52,27 @@ void Controller::UpdatePose() {
             }
         }
     }
+}
+
+void Controller::Grab() {
+    Key* key = input_manager->map_->FirstIntersectedKey(*bounding_box_);
+    if (key != nullptr && held_key_ == nullptr && key->CanBePickedUp()) {
+        held_key_ = key;
+        held_key_->SetHolder(this);
+
+        held_key_->transform->ResetAndSetTranslation(glm::vec3(0));
+        held_key_->transform->Rotate(M_PI / 2, glm::vec3(1, 0, 0));
+        held_key_->transform->SetParent(transform);
+    }
+}
+
+void Controller::Ungrab() {
+    if (held_key_ == nullptr) return;
+
+    held_key_->Drop();
+    held_key_ = nullptr;
+}
+
+void Controller::UseKey() {
+    held_key_ = nullptr;
 }

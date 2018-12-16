@@ -43,3 +43,5 @@ const glm::mat4 world_to_openvr_scale = glm::scale(glm::mat4(), glm::vec3(1.5, 1
 const glm::mat4 openvr_to_world_rotation = glm::rotate(glm::mat4(), (float)(M_PI / 2.0f), glm::vec3(1, 0, 0));
 const glm::mat4 openvr_to_world = openvr_to_world_rotation * glm::inverse(world_to_openvr_scale);
 const glm::mat4 world_to_openvr = glm::inverse(openvr_to_world_rotation) * world_to_openvr_scale;
+
+const glm::vec3 CONTROLLER_TIP_COLLIDER_HALF_DIAGONAL = glm::vec3(0.2f);

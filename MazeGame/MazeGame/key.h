@@ -2,7 +2,7 @@
 #include "game_object.h"
 
 class Map;
-class Player;
+class Controller;
 
 class Key : public GameObject {
    public:
@@ -11,7 +11,7 @@ class Key : public GameObject {
 
     void Update() override;
     void GoAway();
-    void SetHolder(Player* player);
+    void SetHolder(Controller* player);
     void Drop();
     bool CanBePickedUp();
 
@@ -19,6 +19,6 @@ class Key : public GameObject {
     void InitTransform();
 
     char id_;
-    Player* holder_;
+    Controller* holder_;
     int drop_time_ = 0;
 };

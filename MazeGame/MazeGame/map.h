@@ -20,7 +20,7 @@ class Map {
     void UpdateAll();
     bool IntersectsAnySolidObjects(GameObject* object);
     Player* IntersectsPlayer(GameObject* object);
-    Key* FirstIntersectedKey(GameObject* object);
+    Key* FirstIntersectedKey(const BoundingBox& object);
     Door* IntersectsDoorWithId(GameObject* object, char id);
 
     glm::vec3 SpawnPosition() const;

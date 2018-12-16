@@ -27,7 +27,7 @@ VRInputManager::VRInputManager(vr::IVRSystem* vr_system, VRCamera* vr_camera) : 
     vr_camera->MakeChildOfTrackingCenter(hands_[Right].transform);
 }
 
-VRInputManager::VRInputManager() : hands_{}, action_set_(0), vr_system_(nullptr) {}
+VRInputManager::VRInputManager() : hands_{}, action_set_(0), vr_system_(nullptr), map_(nullptr) {}
 
 VRInputManager::~VRInputManager() {}
 
@@ -38,6 +38,8 @@ void VRInputManager::Init() {
 
     std::string action_manifest_string(action_manifest_path.string());
     vr::EVRInputError error = vr::VRInput()->SetActionManifestPath(action_manifest_string.c_str());
+
+    vr::VRInput()->GetActionHandle("/actions/game/in/grab", &action_grab);
 
     vr::VRInput()->GetActionHandle("/actions/game/out/Haptic_Left", &hands_[Left].action_haptic);
     vr::VRInput()->GetInputSourceHandle("/user/hand/left", &hands_[Left].source);
@@ -73,6 +75,27 @@ bool VRInputManager::HandleInput() {
     actionSet.ulActionSet = action_set_;
     vr::VRInput()->UpdateActionState(&actionSet, sizeof(actionSet), 1);
 
+    vr::InputDigitalActionData_t action_data;
+    vr::VRInputValueHandle_t origin;
+    if (GetDigitalActionDataEdge(action_grab, action_data, &origin)) {
+        Controller* source_controller = nullptr;
+        if (origin == hands_[Left].source) {
+            source_controller = &hands_[Left];
+        } else if (origin == hands_[Right].source) {
+            source_controller = &hands_[Right];
+        }
+
+        if (source_controller != nullptr) {
+            if (action_data.bState) {  // Just grabbed
+                // printf("Grabbed!\n");
+                source_controller->Grab();
+            } else {  // Just ungrabbed
+                // printf("Ungrabbed!\n");
+                source_controller->Ungrab();
+            }
+        }
+    }
+
     for (Hand eHand = Left; eHand <= Right; ((int&)eHand)++) {
         hands_[eHand].UpdatePose();
     }
@@ -81,21 +104,16 @@ bool VRInputManager::HandleInput() {
 }
 
 void VRInputManager::RenderControllers(const glm::mat4& worldViewMatrix) const {
-    glUseProgram(ShaderManager::RenderModel_Shader);
-
     for (Hand eHand = Left; eHand <= Right; ((int&)eHand)++) {
         hands_[eHand].Render(worldViewMatrix);
 
         /*printf("Rendermodel at location %f, %f, %f\n", hands_[eHand].pose[3][0], hands_[eHand].pose[3][1],
                hands_[eHand].pose[3][2]);*/
     }
-
-    glUseProgram(0);
 }
 
 RenderModel* VRInputManager::FindOrLoadRenderModel(const char* render_model_name) {
     RenderModel* pRenderModel = NULL;
-    // for (std::vector<RenderModel*>::iterator i = render_models_.begin(); i != render_models_.end(); i++) {
     for (RenderModel* i : render_models_) {
         if (!_stricmp(i->GetName().c_str(), render_model_name)) {
             pRenderModel = i;
@@ -147,6 +165,23 @@ RenderModel* VRInputManager::FindOrLoadRenderModel(const char* render_model_name
     }
 
     return pRenderModel;
+}
+
+bool VRInputManager::GetDigitalActionDataEdge(vr::VRActionHandle_t action, vr::InputDigitalActionData_t& action_data,
+                                              vr::VRInputValueHandle_t* pDevicePath) {
+    vr::VRInput()->GetDigitalActionData(action, &action_data, sizeof(action_data), vr::k_ulInvalidInputValueHandle);
+    if (pDevicePath) {
+        *pDevicePath = vr::k_ulInvalidInputValueHandle;
+        if (action_data.bActive) {
+            vr::InputOriginInfo_t originInfo;
+            if (vr::VRInputError_None ==
+                vr::VRInput()->GetOriginTrackedDeviceInfo(action_data.activeOrigin, &originInfo, sizeof(originInfo))) {
+                *pDevicePath = originInfo.devicePath;
+            }
+        }
+    }
+
+    return action_data.bActive && action_data.bChanged;
 }
 
 void VRInputManager::ProcessVREvent(const vr::VREvent_t& event) {

@@ -1,6 +1,7 @@
 // Credit for the foundations of this code goes to Valve Corporation
 // https://github.com/ValveSoftware/openvr/blob/master/samples/hellovr_opengl/hellovr_opengl_main.cpp
 #include "render_model.h"
+#include "shader_manager.h"
 
 RenderModel::RenderModel(const std::string& render_model_name) : model_name_(render_model_name) {
     gl_index_buffer_ = 0;
@@ -77,6 +78,7 @@ void RenderModel::Cleanup() {
 }
 
 void RenderModel::Draw() {
+    glUseProgram(ShaderManager::RenderModel_Shader);
     glBindVertexArray(gl_vert_array_);
 
     glActiveTexture(GL_TEXTURE0);
@@ -85,4 +87,5 @@ void RenderModel::Draw() {
     glDrawElements(GL_TRIANGLES, vertex_count_, GL_UNSIGNED_SHORT, 0);
 
     glBindVertexArray(0);
+    glUseProgram(0);
 }

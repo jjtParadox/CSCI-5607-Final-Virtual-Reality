@@ -90,39 +90,11 @@ void Player::Update() {
     //       bounding_box_->Max().x, bounding_box_->Max().y, bounding_box_->Max().z);
     // printf("Player z: %f\n", transform->Z());
 
-    //// Key logic ////
-    Key* key = map_->FirstIntersectedKey(this);
-    if (key != nullptr && held_key_ == nullptr && key->CanBePickedUp()) {
-        held_key_ = key;
-        held_key_->SetHolder(this);
-        InitializeKeyLocation(held_key_);
-    }
-
     forward_velocity = 0;
     right_velocity = 0;
 
+    // printf("Player ");
     bounding_box_->Render();
-}
-
-void Player::UseKey() {
-    held_key_ = nullptr;
-}
-
-void Player::DropKey() {
-    if (held_key_ == nullptr) return;
-
-    held_key_->Drop();
-    held_key_ = nullptr;
-}
-
-void Player::InitializeKeyLocation(Key* key) {
-    held_key_->transform->ResetAndSetTranslation(camera_->GetNormalizedLookPosition() * 0.2f);
-    held_key_->transform->Translate(0, 0, -0.1);
-    held_key_->transform->Scale(0.3f);
-    held_key_->transform->Rotate(M_PI / 2, glm::vec3(1, 0, 0));
-    held_key_->transform->Rotate(3 * M_PI / 4, glm::vec3(0, 0, 1));
-
-    held_key_->transform->SetParent(transform);
 }
 
 void Player::RegenerateBoundingBox() {

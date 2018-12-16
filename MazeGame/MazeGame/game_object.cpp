@@ -33,6 +33,7 @@ void GameObject::SetTextureIndex(TEXTURE texture_index) {
 }
 
 void GameObject::Update() {
+    glUseProgram(ShaderManager::Textured_Shader);
     if (model_ == nullptr) {
         printf("GameObject must be given a valid model before calling Update()\n");
         exit(1);
@@ -46,12 +47,17 @@ void GameObject::Update() {
     }
 
     glDrawArrays(GL_TRIANGLES, model_->vbo_vertex_start_index_, model_->NumVerts());
+    glUseProgram(0);
 
     bounding_box_->Render();
 }
 
 bool GameObject::IntersectsWith(const GameObject& other) const {
-    return bounding_box_->ContainsOrIntersects(*other.bounding_box_);
+    return IntersectsWith(*other.bounding_box_);
+}
+
+bool GameObject::IntersectsWith(const BoundingBox& other) const {
+    return bounding_box_->ContainsOrIntersects(other);
 }
 
 void GameObject::InitBoundingBox(const std::vector<glm::vec4>& vertices) {

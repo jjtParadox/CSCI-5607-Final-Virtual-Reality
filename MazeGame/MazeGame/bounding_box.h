@@ -11,6 +11,7 @@ class BoundingBox {
    public:
     BoundingBox();
     explicit BoundingBox(std::vector<glm::vec4> points);  // Grows BB to encompass all points
+    explicit BoundingBox(std::vector<glm::vec3> points);
     ~BoundingBox();
 
     void ExpandToBound(const BoundingBox& other);

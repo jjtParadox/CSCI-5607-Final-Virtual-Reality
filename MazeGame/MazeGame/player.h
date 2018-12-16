@@ -10,12 +10,8 @@ class Player : public GameObject {
 
     void Update() override;
 
-    void UseKey();
-    void DropKey();
-
    private:
     void RegenerateBoundingBox();
-    void InitializeKeyLocation(Key* key);
 
     VRCamera* camera_;
     std::vector<glm::vec4> box_;

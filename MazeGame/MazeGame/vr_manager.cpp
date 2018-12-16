@@ -126,6 +126,10 @@ bool VRManager::Init() {
     m_uiVertcount = 0;
 
     vr_camera_ = new VRCamera(0.1f, 500.0f, m_pHMD);
+    vr_camera_->Setup();
+
+    vr_input_manager_ = VRInputManager(m_pHMD, vr_camera_);
+    vr_input_manager_.Init();
 
     if (!InitGL()) {
         printf("%s - Unable to initialize OpenGL!\n", __FUNCTION__);
@@ -138,11 +142,6 @@ bool VRManager::Init() {
     }
 
     // vr::VRCompositor()->SetTrackingSpace(vr::ETrackingUniverseOrigin::TrackingUniverseSeated);
-
-    vr_camera_->Setup();
-
-    vr_input_manager_ = VRInputManager(m_pHMD, vr_camera_);
-    vr_input_manager_.Init();
 
     return true;
 }
@@ -276,6 +275,7 @@ void VRManager::SetupScene() {
     map = map_loader.LoadMap(map_file);
     player = new Player(vr_camera_, map);
     map->Add(player);
+    vr_input_manager_.map_ = map;
 
     TextureManager::InitTextures();
 
@@ -447,13 +447,10 @@ void VRManager::RenderScene(vr::Hmd_Eye nEye) {
     glUniformMatrix4fv(m_nSceneMatrixLocation, 1, GL_FALSE, glm::value_ptr(current_world_to_view));
     glUniformMatrix4fv(ShaderManager::Attributes.view, 1, GL_FALSE, glm::value_ptr(mat4()));  // Temporary
     TextureManager::Update();
-    player->Update();
-    // camera.Update();
     glBindVertexArray(m_unSceneVAO);
     map->UpdateAll();
-    glBindVertexArray(0);
-
     vr_input_manager_.RenderControllers(current_world_to_view);
+    glBindVertexArray(0);
 
     glUseProgram(0);
 }

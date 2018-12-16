@@ -19,6 +19,7 @@ class GameObject : public Updatable {
 
     void Update() override;
     bool IntersectsWith(const GameObject& other) const;
+    bool IntersectsWith(const BoundingBox& other) const;
     virtual bool IsSolid() {  // To be overriden by child classes
         return false;
     }

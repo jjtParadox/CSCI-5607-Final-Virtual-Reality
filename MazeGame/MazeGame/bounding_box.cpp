@@ -26,6 +26,20 @@ BoundingBox::BoundingBox(std::vector<glm::vec4> points) : BoundingBox() {
     InitToBounds(glm::vec3(min_x, min_y, min_z), glm::vec3(max_x, max_y, max_z));
 }
 
+BoundingBox::BoundingBox(std::vector<glm::vec3> points) : BoundingBox() {  // Terrible copy of above but meh
+    float min_x = INFINITY, min_y = INFINITY, min_z = INFINITY, max_x = -INFINITY, max_y = -INFINITY, max_z = -INFINITY;
+    for (auto point : points) {
+        min_x = min(min_x, point.x);
+        min_y = min(min_y, point.y);
+        min_z = min(min_z, point.z);
+        max_x = max(max_x, point.x);
+        max_y = max(max_y, point.y);
+        max_z = max(max_z, point.z);
+    }
+
+    InitToBounds(glm::vec3(min_x, min_y, min_z), glm::vec3(max_x, max_y, max_z));
+}
+
 BoundingBox::~BoundingBox() = default;
 
 void BoundingBox::ExpandToBound(const BoundingBox& other) {
@@ -51,6 +65,7 @@ bool BoundingBox::ContainsOrIntersects(const BoundingBox& other) const {
 void BoundingBox::Render() const {
     glm::vec3 color = glm::vec3(1, 0, 0);
 
+    glUseProgram(ShaderManager::Textured_Shader);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     glm::mat4 model_matrix;
@@ -59,6 +74,7 @@ void BoundingBox::Render() const {
     center *= 0.5f;
     model_matrix = glm::translate(model_matrix, center);
     model_matrix = glm::scale(model_matrix, glm::vec3(side_length));
+    // printf("Center: %f, %f, %f\n", center.x, center.y, center.z);
 
     glUniformMatrix4fv(ShaderManager::Attributes.model, 1, GL_FALSE, glm::value_ptr(model_matrix));
 
@@ -71,6 +87,7 @@ void BoundingBox::Render() const {
     glDrawArrays(GL_TRIANGLES, debug_render_model->vbo_vertex_start_index_, debug_render_model->NumVerts());
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glUseProgram(0);
 }
 
 glm::vec3 BoundingBox::Max() const {
