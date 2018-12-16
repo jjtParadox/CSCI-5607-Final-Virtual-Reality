@@ -69,11 +69,11 @@ void BoundingBox::Render() const {
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     glm::mat4 model_matrix;
-    float side_length = max_->X() - min_->X();
+    glm::vec3 scale = glm::vec3(max_->X() - min_->X(), max_->Y() - min_->Y(), max_->Z() - min_->Z());
     glm::vec3 center = glm::vec3(max_->WorldPosition() + min_->WorldPosition());
     center *= 0.5f;
     model_matrix = glm::translate(model_matrix, center);
-    model_matrix = glm::scale(model_matrix, glm::vec3(side_length));
+    model_matrix = glm::scale(model_matrix, scale);
     // printf("Center: %f, %f, %f\n", center.x, center.y, center.z);
 
     glUniformMatrix4fv(ShaderManager::Attributes.model, 1, GL_FALSE, glm::value_ptr(model_matrix));
