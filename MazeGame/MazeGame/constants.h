@@ -19,7 +19,8 @@ const int TEXCOORD_OFFSET = 3;
 
 const float CAMERA_ROTATION_SPEED = 0.01f;
 const float CAMERA_MOVE_SPEED = 0.01f;
-const float MAX_MOVE_SPEED = 1.45f * CAMERA_MOVE_SPEED;
+const float MAX_MOVE_SPEED = 2.0f * CAMERA_MOVE_SPEED;
+const float VR_MOVE_SPEED_FACTOR = 2.0f;
 
 const float ABSOLUTE_TOLERANCE = 0.00001f;
 

@@ -20,6 +20,7 @@ class Map {
     void UpdateAll();
     bool IntersectsAnySolidObjects(GameObject* object);
     Player* IntersectsPlayer(GameObject* object);
+    Player* GetPlayer();
     Key* FirstIntersectedKey(const BoundingBox& object);
     Door* IntersectsDoorWithId(GameObject* object, char id);
 

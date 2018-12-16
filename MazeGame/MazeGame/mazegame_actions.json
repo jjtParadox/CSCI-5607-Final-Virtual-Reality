@@ -29,6 +29,10 @@
 	{
 	  "name": "/actions/game/in/grab_right",
 	  "type": "boolean"
+	},
+	{
+	  "name": "/actions/game/in/movement",
+	  "type": "vector2"
 	}
   ],
     "localization" : [

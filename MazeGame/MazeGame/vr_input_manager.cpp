@@ -39,6 +39,8 @@ void VRInputManager::Init() {
     std::string action_manifest_string(action_manifest_path.string());
     vr::EVRInputError error = vr::VRInput()->SetActionManifestPath(action_manifest_string.c_str());
 
+    vr::VRInput()->GetActionHandle("/actions/game/in/movement", &action_movement);
+
     vr::VRInput()->GetActionHandle("/actions/game/out/Haptic_Left", &hands_[Left].action_haptic);
     vr::VRInput()->GetInputSourceHandle("/user/hand/left", &hands_[Left].source);
     vr::VRInput()->GetActionHandle("/actions/game/in/Hand_Left", &hands_[Left].action_pose);
@@ -74,6 +76,15 @@ bool VRInputManager::HandleInput() {
     vr::VRActiveActionSet_t actionSet = {0};
     actionSet.ulActionSet = action_set_;
     vr::VRInput()->UpdateActionState(&actionSet, sizeof(actionSet), 1);
+
+    // Movement inputs
+    vr::InputAnalogActionData_t analog_action_data;
+    vr::VRInput()->GetAnalogActionData(action_movement, &analog_action_data, sizeof(vr::InputAnalogActionData_t),
+                                       vr::k_ulInvalidInputValueHandle);
+    if (analog_action_data.bActive && analog_action_data.x != 0 && analog_action_data.y != 0) {
+        // printf("Axis: %f, %f\n", analog_action_data.x, analog_action_data.y);
+        map_->GetPlayer()->Move(analog_action_data.y, analog_action_data.x, CAMERA_MOVE_SPEED * VR_MOVE_SPEED_FACTOR);
+    }
 
     // Tell each hand to handle its own input
     for (Hand eHand = Left; eHand <= Right; ((int&)eHand)++) {

@@ -9,6 +9,7 @@ class Player : public GameObject {
     Player(VRCamera* camera, Map* map);
 
     void Update() override;
+    void Move(float forward_velocity, float right_velocity, float speed_factor);
 
    private:
     void RegenerateBoundingBox();
