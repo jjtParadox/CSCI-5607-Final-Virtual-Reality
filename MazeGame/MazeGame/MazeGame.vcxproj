@@ -224,7 +224,6 @@
     <None Include="textured-Fragment.glsl" />
     <None Include="textured-Vertex.glsl" />
     <None Include="vertex.glsl" />
-    <None Include="weirdColors-Fragment.glsl" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="map1.txt" />

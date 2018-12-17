@@ -200,9 +200,6 @@
     <None Include="renderModel-Fragment.glsl">
       <Filter>Source Files</Filter>
     </None>
-    <None Include="weirdColors-Fragment.glsl">
-      <Filter>Source Files</Filter>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="models\cube.txt">
