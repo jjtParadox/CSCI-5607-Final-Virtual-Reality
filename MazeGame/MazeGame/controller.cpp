@@ -26,7 +26,7 @@ void Controller::Render(const glm::mat4& worldViewMatrix) const {
     glUniformMatrix4fv(glGetUniformLocation(ShaderManager::RenderModel_Shader, "matrix"), 1, GL_FALSE, glm::value_ptr(matMVP));
 
     render_model->Draw();
-    bounding_box_->Render();
+    // bounding_box_->Render();
 }
 
 void Controller::HandleInput() {

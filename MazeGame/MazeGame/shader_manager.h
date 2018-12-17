@@ -11,6 +11,7 @@ typedef struct {
     GLint model;
     GLint color;
     GLint texID;
+    GLint shaderMode;
 } ShaderAttributes;
 
 class ShaderManager {

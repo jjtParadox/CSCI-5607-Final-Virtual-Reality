@@ -39,6 +39,11 @@ void ShaderManager::InitShaderAttributes() {
     GLint uniView = glGetUniformLocation(Textured_Shader, "view");
     GLint uniProj = glGetUniformLocation(Textured_Shader, "proj");
     GLint uniModel = glGetUniformLocation(Textured_Shader, "model");
+    GLint uniShaderMode = glGetUniformLocation(Textured_Shader, "shaderMode");
+
+    glUseProgram(Textured_Shader);
+    glUniform1i(uniShaderMode, 0);
+    glUseProgram(0);
 
     Attributes.position = posAttrib;
     Attributes.normals = normAttrib;
@@ -48,6 +53,7 @@ void ShaderManager::InitShaderAttributes() {
     Attributes.view = uniView;
     Attributes.projection = uniProj;
     Attributes.model = uniModel;
+    Attributes.shaderMode = uniShaderMode;
 }
 
 GLuint ShaderManager::CompileShaderProgram(const std::string& vertex_shader_file, const std::string& fragment_shader_file) {

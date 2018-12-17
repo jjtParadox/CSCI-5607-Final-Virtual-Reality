@@ -40,6 +40,7 @@ void VRInputManager::Init() {
     vr::EVRInputError error = vr::VRInput()->SetActionManifestPath(action_manifest_string.c_str());
 
     vr::VRInput()->GetActionHandle("/actions/game/in/movement", &action_movement);
+    vr::VRInput()->GetActionHandle("/actions/game/in/shaderMode", &action_shader_mode);
 
     vr::VRInput()->GetActionHandle("/actions/game/out/Haptic_Left", &hands_[Left].action_haptic);
     vr::VRInput()->GetInputSourceHandle("/user/hand/left", &hands_[Left].source);
@@ -76,6 +77,20 @@ bool VRInputManager::HandleInput() {
     vr::VRActiveActionSet_t actionSet = {0};
     actionSet.ulActionSet = action_set_;
     vr::VRInput()->UpdateActionState(&actionSet, sizeof(actionSet), 1);
+
+    // Check for shader mode
+    vr::InputDigitalActionData_t digital_action_data;
+    if (GetDigitalActionDataEdge(action_shader_mode, digital_action_data)) {
+        if (digital_action_data.bState) {  // Just pressed
+            GLint current_mode;
+            glGetUniformiv(ShaderManager::Textured_Shader, ShaderManager::Attributes.shaderMode, &current_mode);
+
+            current_mode = ((GLint)current_mode + 1) % NUM_SHADER_MODES;
+            glUseProgram(ShaderManager::Textured_Shader);
+            glUniform1i(ShaderManager::Attributes.shaderMode, current_mode);
+            glUseProgram(0);
+        }
+    }
 
     // Movement inputs
     vr::InputAnalogActionData_t analog_action_data;

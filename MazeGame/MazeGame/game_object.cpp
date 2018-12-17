@@ -51,7 +51,7 @@ void GameObject::Update() {
     // glBindVertexArray(0);
     glUseProgram(0);
 
-    bounding_box_->Render();
+    // bounding_box_->Render();
 }
 
 bool GameObject::IntersectsWith(const GameObject& other) const {

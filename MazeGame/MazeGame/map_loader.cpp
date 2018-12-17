@@ -79,7 +79,7 @@ Map* MapLoader::LoadMap(const string& filename, GLuint scene_vao) {
                         current_object = new Wall(wall_model_);
                         current_object->transform->Scale(glm::vec3(1, 1, 1.3));
                         current_object->transform->Translate(base_position);
-                        current_object->SetTextureIndex(TEX0);
+                        current_object->SetTextureIndex(FRACTAL);
                         break;
                     case 'S':
                         current_object = new Spawn(start_model_);
